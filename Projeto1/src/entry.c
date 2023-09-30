@@ -2,12 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/data.h"
-
-struct entry_t {
-	char *key;	/* string, cadeia de caracteres terminada por '\0' */
-	struct data_t *value; /* Bloco de dados */
-};
+#include "../include/entry.h"
 
 /* Função que cria uma entry, reservando a memória necessária e
  * inicializando-a com a string e o bloco de dados de entrada.
