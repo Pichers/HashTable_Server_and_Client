@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "data.h"
+#include "../Projeto1/include/data.h"
 
 /**************************************************************/
 void pee(const char *msg)
@@ -97,14 +97,14 @@ int testDup() {
 	data->data = NULL;
 	assert(data_dup(data) == NULL);
 	result = result && (data_dup(data) == NULL);
-	
+
 	free(data);
 
 	if ((data = data_create(data_size, data_s)) == NULL)
 		pee("  data_create retornou NULL - O teste não pode prosseguir");
-	
+
 	data2 = data_dup(data);
-	
+
 	result = result && (data2 != data)
                         && (data->data != data2->data)
                         && (data->datasize == data2->datasize)
@@ -112,6 +112,7 @@ int testDup() {
 
 	data_destroy(data);
 	data_destroy(data2);
+
 
 	printf("%s\n",result?"passou":"não passou");
 	return result;

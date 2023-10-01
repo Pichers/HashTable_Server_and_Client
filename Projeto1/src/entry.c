@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../include/data.h"
 #include "../include/entry.h"
 
 /* Função que cria uma entry, reservando a memória necessária e
@@ -26,7 +27,7 @@ struct entry_t *entry_create(char *key, struct data_t *data){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int entry_destroy(struct entry_t *entry){
-    if(entry == NULL){
+    if(entry == NULL || entry->key == NULL || entry->value == NULL){
         return -1;
     }
     free(entry->key);
@@ -46,6 +47,11 @@ struct entry_t *entry_dup(struct entry_t *entry){
 
     struct entry_t* newEntry;
     newEntry = entry_create(entry->key, entry->value);
+    if(newEntry == NULL)
+        return NULL;
+
+    newEntry->key = strdup(entry->key);
+    newEntry->value = data_dup(entry->value);
 
     return newEntry;
 }
@@ -56,7 +62,7 @@ struct entry_t *entry_dup(struct entry_t *entry){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int entry_replace(struct entry_t *entry, char *new_key, struct data_t *new_value){
-    if (entry == NULL || new_key == NULL || new_value || NULL)
+    if (entry == NULL || new_key == NULL || new_value == NULL)
         return -1;
     
     free(entry->key);

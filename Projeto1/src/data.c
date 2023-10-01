@@ -13,11 +13,12 @@ struct data_t *data_create(int size, void *data){
     if(size <= 0 || data == NULL)
         return NULL;
     
-    struct data_t* d;
-    d = malloc(sizeof(struct data_t));
+    struct data_t* d = malloc(sizeof(struct data_t));
+    if(d==NULL)
+        return NULL;
 
+    d->data = data;
     d->datasize = size;
-    memcpy(d->data, data, size);
     
     return d;
 }
@@ -48,6 +49,15 @@ struct data_t *data_dup(struct data_t *data){
 
     struct data_t* newData;
     newData = data_create(data->datasize, data->data);
+    if(newData == NULL)
+        return NULL;
+
+    newData->data = malloc(data->datasize);
+    if(newData->data == NULL){
+        free(newData);
+        return NULL;
+    }
+    memcpy(newData->data, data->data, data->datasize);
 
     return newData;
 }
