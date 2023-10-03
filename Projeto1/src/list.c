@@ -5,8 +5,6 @@
 #include "../include/list-private.h"
 #include "../include/list.h"
 
-struct node_t* getNode(struct list_t* l, char* k);
-
 /* Função que cria e inicializa uma nova lista (estrutura list_t a
  * ser definida pelo grupo no ficheiro list-private.h).
  * Retorna a lista ou NULL em caso de erro.
@@ -64,21 +62,26 @@ int list_add(struct list_t *list, struct entry_t *entry){
 
     for (int i = 0; i < list->size; i++){
 
-        if(entry_compare(node1->entry, entry) == -1){
+        if(entry_compare(entry, node1->entry) == -1){
             
             newNode->next = node1;
             newNode->previous = node1->previous;
+            node1->previous = newNode;
 
             if(i == 0){
                 list->head = newNode;
+
+                list->size++;
+
                 return 0;
             }
 
             newNode->previous->next = newNode;
+            list->size++;
 
             return 0;
         }
-        if(entry_compare(node1->entry, entry) == 0){
+        if(entry_compare(entry, node1->entry) == 0){
 
             newNode->next = node1->next;
             newNode->previous = node1->previous;
@@ -98,8 +101,11 @@ int list_add(struct list_t *list, struct entry_t *entry){
             break;
         node1 = node1->next;
     }
+    
     newNode->previous = node1;
     node1->next = newNode;
+
+    list->size++;
 
     return 0;
 }
@@ -110,8 +116,29 @@ int list_add(struct list_t *list, struct entry_t *entry){
  * ou -1 em caso de erro.
  */
 int list_remove(struct list_t *list, char *key){
-    //correr a lista, encontrar o node, prev = next, next.prev = prev, destroy_entry, free node;
+
+    if(list == NULL)
+        return -1;
     
+    struct node_t* n = getNode(list, key);
+
+    if(isEmpty(list) == 1 || n == NULL)
+        return 1;
+
+    if(n == list->head)
+        list->head = n->next;
+    else
+        n->previous->next = n->next;
+
+    if(n->next != NULL)
+        n->next->previous = n->previous;
+
+    entry_destroy(n->entry);
+    free(n);
+
+    list->size--;
+
+    return 0;
 }
 
 /* Função que obtém da lista a entry com a chave key.
@@ -119,8 +146,7 @@ int list_remove(struct list_t *list, char *key){
  * entry ou em caso de erro.
 */
 struct entry_t* list_get(struct list_t* list, char* key){
-    struct node_t* n = malloc(sizeof(struct node_t));
-    n = getNode(list, key);
+    struct node_t* n = getNode(list, key);
 
     return n->entry;
 }
@@ -179,4 +205,18 @@ struct node_t* getNode(struct list_t* l, char* k){
         cNode = cNode->next;
     }
     return NULL;
+}
+
+void printListKeys(struct list_t* l){
+
+    struct node_t* n = l->head;
+
+    printf("list size: %d\n", l->size);
+    for (int i = 0; i < l->size; i++)
+    {
+        printf("key: %s\n", n->entry->key);
+
+        n = n->next;
+    }
+    
 }

@@ -4,9 +4,9 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "list.h"
-#include "data.h"
-#include "entry.h"
+#include "../Projeto1/include/list.h"
+#include "../Projeto1/include/data.h"
+#include "../Projeto1/include/entry.h"
 
 /**************************************************************/
 void pee(const char *msg)
@@ -76,7 +76,6 @@ int testAdd123RemoveHead() {
 	result = (list_add(list, entry1) == 0);
 	result = result && (list_add(list, entry2) == 0);
 	result = result && (list_add(list, entry3) == 0);
-
 	result = result && (list_remove(list, "abc1") == 0);
 	result = result && (list_get(list, "abc2") == entry2);
 	result = result && (list_get(list, "abc3") == entry3);

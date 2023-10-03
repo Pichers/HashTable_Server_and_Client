@@ -44,6 +44,9 @@ int isEmpty(struct list_t* l);
 */
 void add(struct list_t* l, struct entry_t* e);
 
-
+/**
+ * returns the node with the given key
+*/
+struct node_t* getNode(struct list_t* l, char* k);
 
 #endif
