@@ -11,6 +11,10 @@
  */
 struct list_t *list_create(){
     struct list_t* list = malloc(sizeof(struct list_t*));
+    if(list == NULL){
+        //in case of memory allocation fail
+        return NULL;
+    }
 
     if(list == NULL){
         return NULL;
@@ -63,6 +67,11 @@ int list_destroy(struct list_t *list){
 int list_add(struct list_t *list, struct entry_t *entry){
 
     struct node_t* newNode = malloc(sizeof(struct node_t*));
+    if(newNode == NULL){
+        //in case of memory allocation fail
+        return -1;
+    }
+
     newNode->entry = entry;
 
     if(list == NULL || entry == NULL){
@@ -117,11 +126,7 @@ int list_add(struct list_t *list, struct entry_t *entry){
 
             return 1;
         }
-        /*
-        if(node1->next != NULL)
-            node1 = node1->next;
-        */
-        if(node1->next != NULL)
+        if(node1->next == NULL)
             break;
         node1 = node1->next;
     }
@@ -191,16 +196,27 @@ char **list_get_keys(struct list_t *list){
     if(list == NULL || isEmpty(list))
         return NULL;
     
-    char** list_keys;
+    char** list_keys = malloc((list->size + 1) * sizeof(char*));
+    if (list_keys == NULL) {
+        //in case of memory allocation fail
+        return NULL;
+    }
+
     struct node_t* cNode = list->head;
     
     for (int i = 0; i < list->size; i++){
 
-        list_keys[i] = cNode->entry->key;
-        
-        if(cNode->next != NULL){
-            cNode = cNode->next;
+        list_keys[i] = strdup(cNode->entry->key);
+        if (list_keys[i] == NULL) {
+            //in case of memory allocation fail
+            for (int j = 0; j < i; j++) {
+                free(list_keys[j]);
+            }
+            free(list_keys);
+            return NULL;
         }
+        
+        cNode = cNode->next;
     }
     list_keys[list->size] = NULL;
 
