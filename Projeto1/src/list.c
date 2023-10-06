@@ -27,7 +27,27 @@ struct list_t *list_create(){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int list_destroy(struct list_t *list){
+    if(list == NULL)
+        return -1;
+    if(isEmpty(list))
+        free(list);
+    else {
+        struct node_t* cNode = list->head;
 
+        for (int i = 0; i < list->size; i++){
+            entry_destroy(cNode->entry);
+
+            if(i == list->size - 1)
+                free(cNode); //free the last node
+            else{
+                cNode = cNode->next;
+            
+                free(cNode->previous);
+            }
+        }
+
+        free(list);
+    }
 }
 
 /* Função que adiciona à lista a entry passada como argumento.
@@ -97,7 +117,11 @@ int list_add(struct list_t *list, struct entry_t *entry){
 
             return 1;
         }
-        if(node1->next == NULL)
+        /*
+        if(node1->next != NULL)
+            node1 = node1->next;
+        */
+        if(node1->next != NULL)
             break;
         node1 = node1->next;
     }
@@ -164,7 +188,24 @@ int list_size(struct list_t *list){
  * Retorna o array de strings ou NULL em caso de erro.
  */
 char **list_get_keys(struct list_t *list){
+    if(list == NULL || isEmpty(list))
+        return NULL;
+    
+    char** list_keys;
+    struct node_t* cNode = list->head;
+    
+    for (int i = 0; i < list->size; i++){
 
+        list_keys[i] = cNode->entry->key;
+        
+        if(cNode->next != NULL){
+            cNode = cNode->next;
+        }
+    }
+    list_keys[list->size] = NULL;
+
+    return list_keys;
+    
 }
 
 /* Função que liberta a memória ocupada pelo array de keys obtido pela 
@@ -172,7 +213,15 @@ char **list_get_keys(struct list_t *list){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int list_free_keys(char **keys){
-
+    if(keys == NULL)
+        return -1;
+    
+    int i = 0;
+    while (keys[i] != NULL){
+        free(keys[i]);
+        i++;
+    }
+    return 0;
 }
 
 /**
@@ -205,18 +254,4 @@ struct node_t* getNode(struct list_t* l, char* k){
         cNode = cNode->next;
     }
     return NULL;
-}
-
-void printListKeys(struct list_t* l){
-
-    struct node_t* n = l->head;
-
-    printf("list size: %d\n", l->size);
-    for (int i = 0; i < l->size; i++)
-    {
-        printf("key: %s\n", n->entry->key);
-
-        n = n->next;
-    }
-    
 }
