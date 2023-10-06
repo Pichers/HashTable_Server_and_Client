@@ -1,4 +1,4 @@
-#ifndef _TABLE_H
+```#ifndef _TABLE_H
 #define _TABLE_H /* Módulo table */
 
 #include "../include/data.h"
@@ -8,9 +8,6 @@ struct table_t {
     int size;  
     struct list_t **lists;
 };
-
-
-
 
 
 /* Função para criar e inicializar uma nova tabela hash, com n
@@ -34,13 +31,21 @@ struct table_t *table_create(int n){
 }
     
 
-
-
 /* Função que elimina uma tabela, libertando *toda* a memória utilizada
  * pela tabela.
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
-int table_destroy(struct table_t *table);
+int table_destroy(struct table_t *table){
+    free(table);
+    if(table == NULL){
+        return 0;
+    }
+    return -1;
+}
+
+
+
+
 
 /* Função para adicionar um par chave-valor à tabela. Os dados de entrada
  * desta função deverão ser copiados, ou seja, a função vai criar uma nova
@@ -82,4 +87,4 @@ char **table_get_keys(struct table_t *table);
  */
 int table_free_keys(char **keys);
 
-#endif
+#endif```
