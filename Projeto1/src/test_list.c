@@ -4,9 +4,9 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "../Projeto1/include/list.h"
-#include "../Projeto1/include/data.h"
-#include "../Projeto1/include/entry.h"
+#include "../include/list.h"
+#include "../include/data.h"
+#include "../include/entry.h"
 
 /**************************************************************/
 void pee(const char *msg)

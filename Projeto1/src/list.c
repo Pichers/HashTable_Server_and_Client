@@ -4,6 +4,7 @@
 
 #include "../include/list-private.h"
 #include "../include/list.h"
+#include "../include/entry.h"
 
 /* Função que cria e inicializa uma nova lista (estrutura list_t a
  * ser definida pelo grupo no ficheiro list-private.h).
@@ -31,27 +32,7 @@ struct list_t *list_create(){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int list_destroy(struct list_t *list){
-    if(list == NULL)
-        return -1;
-    if(isEmpty(list))
-        free(list);
-    else {
-        struct node_t* cNode = list->head;
 
-        for (int i = 0; i < list->size; i++){
-            entry_destroy(cNode->entry);
-
-            if(i == list->size - 1)
-                free(cNode); //free the last node
-            else{
-                cNode = cNode->next;
-            
-                free(cNode->previous);
-            }
-        }
-
-        free(list);
-    }
 }
 
 /* Função que adiciona à lista a entry passada como argumento.
@@ -193,8 +174,14 @@ int list_size(struct list_t *list){
  * Retorna o array de strings ou NULL em caso de erro.
  */
 char **list_get_keys(struct list_t *list){
-    if(list == NULL || isEmpty(list))
-        return NULL;
+    
+        if(list == NULL || list->head == NULL)
+            return NULL;
+    
+        char** keys = malloc(sizeof(char*) * (list->size + 1));
+    
+        if(keys == NULL)
+            return NULL;
     
     char** list_keys = malloc((list->size + 1) * sizeof(char*));
     if (list_keys == NULL) {
@@ -229,15 +216,11 @@ char **list_get_keys(struct list_t *list){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int list_free_keys(char **keys){
-    if(keys == NULL)
-        return -1;
-    
-    int i = 0;
-    while (keys[i] != NULL){
-        free(keys[i]);
-        i++;
+    if (keys != NULL){
+        free(keys);
+        return 0;
     }
-    return 0;
+    return -1;
 }
 
 /**
@@ -270,4 +253,18 @@ struct node_t* getNode(struct list_t* l, char* k){
         cNode = cNode->next;
     }
     return NULL;
+}
+
+void printListKeys(struct list_t* l){
+
+    struct node_t* n = l->head;
+
+    printf("list size: %d\n", l->size);
+    for (int i = 0; i < l->size; i++)
+    {
+        printf("key: %s\n", n->entry->key);
+
+        n = n->next;
+    }
+    
 }

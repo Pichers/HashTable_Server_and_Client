@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "../Projeto1/include/data.h"
+#include "../include/data.h"
 
 /**************************************************************/
 void pee(const char *msg)
