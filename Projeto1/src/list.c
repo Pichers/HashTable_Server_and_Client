@@ -32,7 +32,25 @@ struct list_t *list_create(){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int list_destroy(struct list_t *list){
+        if(list == NULL)
+        return -1;
+    if(!isEmpty(list)){
+        struct node_t* cNode = list->head;
 
+        for (int i = 0; i < list->size; i++){
+            entry_destroy(cNode->entry);
+
+            if(i == list->size - 1)
+                free(cNode); //free the last node
+            else{
+                cNode = cNode->next;
+
+                free(cNode->previous);
+            }
+        }
+    }
+    free(list);
+    return 0;
 }
 
 /* Função que adiciona à lista a entry passada como argumento.
