@@ -39,6 +39,7 @@ int list_destroy(struct list_t *list) {
     while (cNode != NULL) {
         struct node_t* nextNode = cNode->next;
         entry_destroy(cNode->entry);
+        
         free(cNode);
         cNode = nextNode;
     }
@@ -63,7 +64,6 @@ int list_add(struct list_t *list, struct entry_t *entry){
 
     struct node_t* newNode = malloc(sizeof(struct node_t*));
     if(newNode == NULL){
-        //in case of memory allocation fail
         return -1;
     }
 
@@ -274,18 +274,4 @@ struct node_t* getNode(struct list_t* l, char* k){
         cNode = cNode->next;
     }
     return NULL;
-}
-
-void printListKeys(struct list_t* l){
-
-    struct node_t* n = l->head;
-
-    printf("list size: %d\n", l->size);
-    for (int i = 0; i < l->size; i++)
-    {
-        printf("key: %s\n", n->entry->key);
-
-        n = n->next;
-    }
-    
 }
