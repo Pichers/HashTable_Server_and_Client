@@ -11,15 +11,12 @@
  * Retorna a lista ou NULL em caso de erro.
  */
 struct list_t *list_create(){
-    struct list_t* list = malloc(sizeof(struct list_t*));
+    struct list_t* list = malloc(sizeof(struct list_t));
     if(list == NULL){
         //in case of memory allocation fail
         return NULL;
     }
 
-    if(list == NULL){
-        return NULL;
-    }
     
     list->size = 0;
     list->head = NULL;
@@ -39,12 +36,9 @@ int list_destroy(struct list_t *list) {
     while (cNode != NULL) {
         struct node_t* nextNode = cNode->next;
         entry_destroy(cNode->entry);
-        
         free(cNode);
         cNode = nextNode;
     }
-
-
     free(list);
     return 0;
 }
@@ -61,17 +55,18 @@ int list_destroy(struct list_t *list) {
  * substituída, ou -1 em caso de erro.
  */
 int list_add(struct list_t *list, struct entry_t *entry){
+    if(list == NULL || entry == NULL){
+        return -1;
+    }
 
-    struct node_t* newNode = malloc(sizeof(struct node_t*));
+    struct node_t* newNode = malloc(sizeof(struct node_t));
     if(newNode == NULL){
         return -1;
     }
 
     newNode->entry = entry;
 
-    if(list == NULL || entry == NULL){
-        return -1;
-    }
+
     if(isEmpty(list)){
         
         newNode->next = NULL;
@@ -85,8 +80,9 @@ int list_add(struct list_t *list, struct entry_t *entry){
     struct node_t* node1 = list->head;
 
     for (int i = 0; i < list->size; i++){
-
-        if(entry_compare(entry, node1->entry) == -1){
+        if(entry_compare(entry, node1->entry) == -2){
+            return -1;
+        } else if(entry_compare(entry, node1->entry) == -1){
             
             newNode->next = node1;
             newNode->previous = node1->previous;
@@ -100,30 +96,43 @@ int list_add(struct list_t *list, struct entry_t *entry){
                 return 0;
             }
 
-            newNode->previous->next = newNode;
+            if (newNode->previous != NULL)
+                newNode->previous->next = newNode;
+            
+            if (newNode->next != NULL) 
+                newNode->next->previous = newNode;
+
             list->size++;
 
             return 0;
-        }
-        if(entry_compare(entry, node1->entry) == 0){
+        } else if(entry_compare(entry, node1->entry) == 0){
 
             newNode->next = node1->next;
             newNode->previous = node1->previous;
 
             if(i == 0){
                 list->head = newNode;
-                return 1;
+                //return 1;
             }
-            newNode->previous->next = newNode;
 
-            entry_destroy(node1->entry);
-            free(node1);
+            if (newNode->previous != NULL)
+                newNode->previous->next = newNode;
+            
+            if (newNode->next != NULL) 
+                newNode->next->previous = newNode;
+
+            entry_destroy(node1->entry); // Free the entry in all cases
+            free(node1); // Free the node in all cases
 
             return 1;
         }
-        if(node1->next == NULL)
+
+        if(node1->next == NULL){
+            newNode->next = NULL;
             break;
+        }
         node1 = node1->next;
+        
     }
     
     newNode->previous = node1;
@@ -196,13 +205,9 @@ int list_size(struct list_t *list){
  */
 char **list_get_keys(struct list_t *list){
     
-        if(list == NULL || list->head == NULL)
-            return NULL;
-    
-        char** keys = malloc(sizeof(char*) * (list->size + 1));
-    
-        if(keys == NULL)
-            return NULL;
+    if(list == NULL || list->head == NULL)
+        return NULL;
+
     
     char** list_keys = malloc((list->size + 1) * sizeof(char*));
     if (list_keys == NULL) {
@@ -238,12 +243,15 @@ char **list_get_keys(struct list_t *list){
  */
 int list_free_keys(char **keys){
     if (keys != NULL){
-        free(keys);
+        // Free individual strings within the keys array
+        for (int i = 0; keys[i] != NULL; i++) {
+            free(keys[i]);
+        }
+        free(keys);  // Free the keys array itself
         return 0;
     }
     return -1;
 }
-
 /**
  * Returns 1 if the list l is empty, 0 if it's not, -1 in case of error
 */
