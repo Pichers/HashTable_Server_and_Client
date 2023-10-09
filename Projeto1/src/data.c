@@ -32,7 +32,8 @@ int data_destroy(struct data_t *data){
     if(data != NULL){
         if(data->data != NULL)
             free(data->data);   
-        free(data);
+        else 
+            free(data);
         return 0;
     }
     return -1;

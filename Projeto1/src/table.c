@@ -1,90 +1,191 @@
-```#ifndef _TABLE_H
+
 #define _TABLE_H /* Módulo table */
 
+#include "../include/table.h"
 #include "../include/data.h"
+#include "../include/list.h"
+#include "../include/entry.h"
+#include "../include/table-private.h"
 #include <stddef.h> 
+#include <stdlib.h>
+#include <string.h>
 
 struct table_t {
-    int size;  
+    int size;
     struct list_t **lists;
 };
 
-
-/* Função para criar e inicializar uma nova tabela hash, com n
- * linhas (n = módulo da função hash).
- * Retorna a tabela ou NULL em caso de erro.
- */
-struct table_t *table_create(int n){
+// Function to create and initialize a new hash table
+struct table_t *table_create(int n) {
     if (n <= 0) {
         return NULL;
     }
-    struct table_t *table = (struct table_t *) malloc(sizeof(struct table_t));
+
+    struct table_t *table = (struct table_t *)malloc(sizeof(struct table_t));
     if (table == NULL) {
         return NULL;
     }
 
-    
     table->size = n;
-    table->lists = (struct list_t **) malloc(sizeof(struct list_t *) * n);
+    table->lists = (struct list_t **)malloc(sizeof(struct list_t *) * n);
+    if (table->lists == NULL) {
+        free(table);
+        return NULL;
+    }
+
+    for (int i = 0; i < n; i++) {
+        table->lists[i] = NULL;
+    }
 
     return table;
 }
-    
 
-/* Função que elimina uma tabela, libertando *toda* a memória utilizada
- * pela tabela.
- * Retorna 0 (OK) ou -1 em caso de erro.
- */
-int table_destroy(struct table_t *table){
-    free(table);
-    if(table == NULL){
-        return 0;
+// Function to destroy a table
+int table_destroy(struct table_t *table) {
+    if (table == NULL) {
+        return -1;
     }
-    return -1;
+
+    for (int i = 0; i < table->size; i++) {
+        if (table->lists[i] != NULL) {
+            list_destroy(table->lists[i]);
+        }
+    }
+
+    free(table->lists);
+    free(table);
+    return 0;
 }
 
+// Function to add a key-value pair to the table
+int table_put(struct table_t *table, char *key, struct data_t *value) {
+    if (table == NULL || key == NULL || value == NULL) {
+        return -1;
+    }
 
+    int hash = hash_code(key, table->size);
+    if (table->lists[hash] == NULL) {
+        table->lists[hash] = list_create();
+        if (table->lists[hash] == NULL) {
+            return -1;
+        }
+    }
 
+    struct entry_t *entry = entry_create(strdup(key), data_dup(value));
+    if (entry == NULL) {
+        return -1;
+    }
 
+    if (list_add(table->lists[hash], entry) != 0) {
+        return -1;
+    }
 
-/* Função para adicionar um par chave-valor à tabela. Os dados de entrada
- * desta função deverão ser copiados, ou seja, a função vai criar uma nova
- * entry com *CÓPIAS* da key (string) e dos dados. Se a key já existir na
- * tabela, a função tem de substituir a entry existente na tabela pela
- * nova, fazendo a necessária gestão da memória.
- * Retorna 0 (ok) ou -1 em caso de erro.
- */
-int table_put(struct table_t *table, char *key, struct data_t *value);
+    return 0;
+}
 
-/* Função que procura na tabela uma entry com a chave key. 
- * Retorna uma *CÓPIA* dos dados (estrutura data_t) nessa entry ou 
- * NULL se não encontrar a entry ou em caso de erro.
- */
-struct data_t *table_get(struct table_t *table, char *key);
+// Function to search the table for an entry with the given key
+struct data_t *table_get(struct table_t *table, char *key) {
+    if (table == NULL || key == NULL) {
+        return NULL;
+    }
+    int hash = hash_code(key, table->size);
+    if (table->lists[hash] == NULL) {
+        return NULL;
+    }
+    struct entry_t *entry = list_get(table->lists[hash], key);
+    if (entry == NULL) {
+        return NULL;
+    }
+    return data_dup(entry->value);
+}
 
-/* Função que remove da lista a entry com a chave key, libertando a
- * memória ocupada pela entry.
- * Retorna 0 se encontrou e removeu a entry, 1 se não encontrou a entry,
- * ou -1 em caso de erro.
- */
-int table_remove(struct table_t *table, char *key);
+// Function to remove an entry with the specified key from the table
+int table_remove(struct table_t *table, char *key) {
+    if (table == NULL || key == NULL) {
+        return -1; 
+    }
 
-/* Função que conta o número de entries na tabela passada como argumento.
- * Retorna o tamanho da tabela ou -1 em caso de erro.
- */
-int table_size(struct table_t *table);
+    int hash = hash_code(key, table->size);
+    if (hash < 0 || hash >= table->size || table->lists[hash] == NULL) {
+        return 1; 
+    }
 
-/* Função que constrói um array de char* com a cópia de todas as keys na 
- * tabela, colocando o último elemento do array com o valor NULL e
- * reservando toda a memória necessária.
- * Retorna o array de strings ou NULL em caso de erro.
- */
-char **table_get_keys(struct table_t *table);
+    int result = list_remove(table->lists[hash], key);
+    return result;
+}
 
-/* Função que liberta a memória ocupada pelo array de keys obtido pela 
- * função table_get_keys.
- * Retorna 0 (OK) ou -1 em caso de erro.
- */
-int table_free_keys(char **keys);
+// Function to count the number of entries in the table
+int table_size(struct table_t *table) {
+    if (table == NULL) {
+        return -1;
+    }
 
-#endif```
+    int size = 0;
+    for (int i = 0; i < table->size; i++) {
+        if (table->lists[i] != NULL) {
+            size += list_size(table->lists[i]);
+        }
+    }
+
+    return size;
+}
+
+// Function to build an array of char* with copies of all the keys in the table
+char **table_get_keys(struct table_t *table) {
+    if (table == NULL) {
+        return NULL;
+    }
+
+    char **keys = (char **)malloc(sizeof(char *) * (table_size(table) + 1));
+    if (keys == NULL) {
+        return NULL;
+    }
+
+    int j = 0;
+    for (int i = 0; i < table->size; i++) {
+        if (table->lists[i] != NULL) {
+            char **list_keys = list_get_keys(table->lists[i]);
+            if (list_keys == NULL) {
+                return NULL;
+            }
+
+            int k = 0;
+            while (list_keys[k] != NULL) {
+                keys[j] = strdup(list_keys[k]);
+                if (keys[j] == NULL) {
+                    return NULL;
+                }
+
+                k++;
+                j++;
+            }
+        }
+    }
+
+    keys[j] = NULL;
+    return keys;
+}
+
+// Function to free the memory occupied by the array of keys obtained
+int table_free_keys(char **keys) {
+    if (keys == NULL) {
+        return -1;
+    }
+
+    for (int i = 0; keys[i] != NULL; i++) {
+        free(keys[i]);
+    }
+
+    free(keys);
+    return 0;
+}
+
+// Function to calculate the hash code for a given key
+int hash_code(char *key, int n) {
+    int sum = 0;
+    for (int i = 0; key[i] != '\0'; i++) {
+        sum += key[i];
+    }
+
+    return sum % n;
+}

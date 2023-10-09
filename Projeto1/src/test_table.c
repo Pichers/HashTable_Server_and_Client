@@ -150,10 +150,10 @@ int testDelInexistente() {
 
 	assert(table_size(table) == 1024);
 	result = (table_size(table) == 1024);
-
+	
 	result = result && (table_get(table, "a/key/b-1024") == NULL) &&
 			   (table_get(table, "abc") == NULL);
-
+			   
 	result = result && (table_remove(table, "a/key/b-1024") == 1) &&
 			   (table_remove(table, "abc") == 1);
 
@@ -163,8 +163,7 @@ int testDelInexistente() {
 	assert(table_size(table) == 1024);
 	result = result && (table_size(table) == 1024);
 
-	table_destroy(table);
-	
+
 	printf("%s\n",result?"passou":"não passou");
 	return result;
 }

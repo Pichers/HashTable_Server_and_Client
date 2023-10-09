@@ -8,9 +8,9 @@ LIB_DIR = lib
 
 
 CC = gcc
-CFLAGS = -Wall -MMD -MP -MF $(DEP_DIR)/$*.d -I $(INC_DIR)
+CFLAGS = -Wall -MMD -MP -g -MF $(DEP_DIR)/$*.d -I $(INC_DIR)
 
-EXECS = $(BIN_DIR)/test_list $(BIN_DIR)/test_data $(BIN_DIR)/test_entry #$(BIN_DIR)/test_table $(BIN_DIR)/test_serialization 
+EXECS = $(BIN_DIR)/test_table $(BIN_DIR)/test_list $(BIN_DIR)/test_data $(BIN_DIR)/test_entry  $(BIN_DIR)/test_serialization 
 
 
 make: $(EXECS)
@@ -25,10 +25,10 @@ $(BIN_DIR)/test_data: $(OBJ_DIR)/data.o $(OBJ_DIR)/test_data.o
 $(BIN_DIR)/test_entry: $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/test_entry.o
 	$(CC) $^ -o $@
 
-$(BIN_DIR)/test_table: $(OBJ_DIR)/data.o $(OBJ_DIR)/table.o $(OBJ_DIR)/test_table.o
+$(BIN_DIR)/test_table: $(OBJ_DIR)/data.o $(OBJ_DIR)/list.o $(OBJ_DIR)/table.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/test_table.o
 	$(CC) $^ -o $@
 
-$(BIN_DIR)/test_serialization: $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/list.o $(OBJ_DIR)/table.o $(OBJ_DIR)/test_serialization.o
+$(BIN_DIR)/test_serialization: $(OBJ_DIR)/serialization.o $(OBJ_DIR)/data.o $(OBJ_DIR)/list.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/test_serialization.o
 	$(CC) $^ -o $@    
 
 

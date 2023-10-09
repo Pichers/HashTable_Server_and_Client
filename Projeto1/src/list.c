@@ -174,9 +174,16 @@ int list_remove(struct list_t *list, char *key){
  * entry ou em caso de erro.
 */
 struct entry_t* list_get(struct list_t* list, char* key){
-    struct node_t* n = getNode(list, key);
-
-    return n->entry;
+    
+        if(list == NULL || key == NULL)
+            return NULL;
+    
+        struct node_t* n = getNode(list, key);
+    
+        if(n == NULL)
+            return NULL;
+    
+        return n->entry;
 }
 
 /* Função que conta o número de entries na lista passada como argumento.

@@ -3,10 +3,7 @@
 
 #include "list.h"
 
-struct table_t {
-	struct list_t **lists;
-	int size;
-};
+struct table_t;
 
 /* Função que calcula o índice da lista a partir da chave
  */
