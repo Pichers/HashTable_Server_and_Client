@@ -1,3 +1,9 @@
+// Grupo 62
+// António Almeida - nº 58235
+// Carlos Van-Dùnem - nº 58202
+// Pedro Cardoso - nº 58212
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

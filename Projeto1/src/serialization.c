@@ -1,3 +1,8 @@
+// Grupo 62
+// António Almeida - nº 58235
+// Carlos Van-Dùnem - nº 58202
+// Pedro Cardoso - nº 58212
+
 #include "serialization.h"
 #include "data.h"
 #include "entry.h"

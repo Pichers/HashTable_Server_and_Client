@@ -1,4 +1,7 @@
-#define _TABLE_H /* Módulo table */
+// Grupo 62
+// António Almeida - nº 58235
+// Carlos Van-Dùnem - nº 58202
+// Pedro Cardoso - nº 58212
 
 #include "table.h"
 #include "data.h"
