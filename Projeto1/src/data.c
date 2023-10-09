@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/data.h"
+#include "data.h"
 
 /* Função que cria um novo elemento de dados data_t e que inicializa 
  * os dados de acordo com os argumentos recebidos, sem necessidade de

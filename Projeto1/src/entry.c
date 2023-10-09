@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/data.h"
-#include "../include/entry.h"
+#include "data.h"
+#include "entry.h"
 
 /* Função que cria uma entry, reservando a memória necessária e
  * inicializando-a com a string e o bloco de dados de entrada.

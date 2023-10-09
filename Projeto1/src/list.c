@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/list-private.h"
-#include "../include/list.h"
-#include "../include/entry.h"
+#include "list-private.h"
+#include "list.h"
+#include "entry.h"
 
 /* Função que cria e inicializa uma nova lista (estrutura list_t a
  * ser definida pelo grupo no ficheiro list-private.h).
@@ -209,7 +209,7 @@ char **list_get_keys(struct list_t *list){
         return NULL;
 
     
-    char** list_keys = malloc((list->size + 1) * sizeof(char*));
+    char** list_keys = malloc((list->size) * sizeof(char*) + sizeof(NULL));
     if (list_keys == NULL) {
         //in case of memory allocation fail
         return NULL;
@@ -242,16 +242,19 @@ char **list_get_keys(struct list_t *list){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int list_free_keys(char **keys){
-    if (keys != NULL){
-        // Free individual strings within the keys array
-        for (int i = 0; keys[i] != NULL; i++) {
-            free(keys[i]);
-        }
-        free(keys);  // Free the keys array itself
-        return 0;
+
+    if (keys == NULL)
+        return -1;
+    
+    // Free individual strings within the keys array
+    for (int i = 0; keys[i] != NULL; i++) {
+        free(keys[i]);
     }
-    return -1;
+
+    free(keys);  // Free the keys array itself
+    return 0;
 }
+
 /**
  * Returns 1 if the list l is empty, 0 if it's not, -1 in case of error
 */

@@ -1,10 +1,10 @@
 #define _TABLE_H /* Módulo table */
 
-#include "../include/table.h"
-#include "../include/data.h"
-#include "../include/list.h"
-#include "../include/entry.h"
-#include "../include/table-private.h"
+#include "table.h"
+#include "data.h"
+#include "list.h"
+#include "entry.h"
+#include "table-private.h"
 #include <stddef.h> 
 #include <stdlib.h>
 #include <string.h>
@@ -137,7 +137,7 @@ char **table_get_keys(struct table_t *table) {
         return NULL;
     }
 
-    char **keys = (char **)malloc(sizeof(char *) * (table_size(table) + 1));
+    char **keys = (char **) malloc(sizeof(char *) * table_size(table) + sizeof(NULL));
     if (keys == NULL) {
         return NULL;
     }
@@ -160,6 +160,7 @@ char **table_get_keys(struct table_t *table) {
                 k++;
                 j++;
             }
+            list_free_keys(list_keys);
         }
     }
 
@@ -178,6 +179,7 @@ int table_free_keys(char **keys) {
     }
 
     free(keys);
+
     return 0;
 }
 

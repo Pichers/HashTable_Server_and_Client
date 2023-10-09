@@ -1,7 +1,7 @@
-#include "../include/serialization.h"
-#include "../include/data.h"
-#include "../include/entry.h"
-#include "../include/list.h"
+#include "serialization.h"
+#include "data.h"
+#include "entry.h"
+#include "list.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
