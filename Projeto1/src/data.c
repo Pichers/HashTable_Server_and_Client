@@ -14,8 +14,10 @@ struct data_t *data_create(int size, void *data){
         return NULL;
     
     struct data_t* d = malloc(sizeof(struct data_t));
-    if(d==NULL)
+    if(d==NULL){
+        free(d);
         return NULL;
+    }
 
     d->data = data;
     d->datasize = size;
@@ -33,10 +35,9 @@ int data_destroy(struct data_t *data){
         return -1;
     if(data->data != NULL)
         free(data->data);   
+
     free(data);
     return 0;    
-    
-    
 }
 
 /* Função que duplica uma estrutura data_t, reservando a memória
@@ -46,14 +47,15 @@ int data_destroy(struct data_t *data){
 struct data_t *data_dup(struct data_t *data){
     if(data == NULL)
         return NULL;
+    
+    struct data_t* newData = data_create(data->datasize, data->data);
 
-    struct data_t* newData;
-    newData = data_create(data->datasize, data->data);
-    if(newData == NULL)
+    if(newData == NULL){
         return NULL;
+    }
 
     newData->data = malloc(data->datasize);
-    if(newData->data == NULL){
+    if(newData == NULL){
         free(newData);
         return NULL;
     }
