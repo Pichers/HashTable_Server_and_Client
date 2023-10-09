@@ -32,7 +32,7 @@ int entry_destroy(struct entry_t *entry){
         return -1;
     }
     free(entry->key);
-    free(entry->value);
+    data_destroy(entry->value);
     free(entry);
 
     return 0;
