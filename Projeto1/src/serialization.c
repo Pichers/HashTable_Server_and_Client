@@ -10,7 +10,7 @@
 
 
 /* Serializa todas as chaves presentes no array de strings keys para o
- * buffer keys_buf, que ser� alocado dentro da fun��o. A serializa��o
+ * buffer keys_buf, que sera alocado dentro da funcao. A serializa��o
  * deve ser feita de acordo com o seguinte formato:
  *    | int   | string | string | string |
  *    | nkeys | key1   | key2   | key3   |
@@ -50,8 +50,8 @@ int keyArray_to_buffer(char **keys, char **keys_buf) {
 
 
 /* De-serializa a mensagem contida em keys_buf, colocando-a num array de
- * strings cujo espaco em mem�ria deve ser reservado. A mensagem contida
- * em keys_buf dever� ter o seguinte formato:
+ * strings cujo espaco em memoria deve ser reservado. A mensagem contida
+ * em keys_buf devera ter o seguinte formato:
  *    | int   | string | string | string |
  *    | nkeys | key1   | key2   | key3   |
  * Retorna o array de strings ou NULL em caso de erro.
