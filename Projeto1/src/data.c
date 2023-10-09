@@ -29,14 +29,13 @@ struct data_t *data_create(int size, void *data){
  */
 int data_destroy(struct data_t *data){
 
-    if(data != NULL){
-        if(data->data != NULL)
-            free(data->data);   
-        else 
-            free(data);
-        return 0;
-    }
-    return -1;
+    if(data == NULL)
+        return -1;
+    if(data->data != NULL)
+        free(data->data);   
+    free(data);
+    return 0;    
+    
     
 }
 

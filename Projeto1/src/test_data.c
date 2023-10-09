@@ -62,6 +62,7 @@ int testDestroy(){
 		pee("  data_create retornou NULL - O teste não pode prosseguir");
 		
 	result = result && (data_destroy(data) == 0);
+	
 
 	printf("%s\n",result?"passou":"não passou");
 	return result;
