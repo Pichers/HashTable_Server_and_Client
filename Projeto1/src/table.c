@@ -28,16 +28,18 @@ struct table_t *table_create(int n) {
     table->size = n;
     table->lists = (struct list_t **)malloc(sizeof(struct list_t *) * n);
     if (table->lists == NULL) {
-        free(table);
+        free(table);  // Free table if table->lists allocation fails
         return NULL;
     }
 
+    // Initialize table->lists elements to NULL
     for (int i = 0; i < n; i++) {
         table->lists[i] = NULL;
     }
 
     return table;
 }
+
 
 // Function to destroy a table
 int table_destroy(struct table_t *table) {
