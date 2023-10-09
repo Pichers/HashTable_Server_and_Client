@@ -28,11 +28,21 @@ struct entry_t *entry_create(char *key, struct data_t *data){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int entry_destroy(struct entry_t *entry){
-    if(entry == NULL || entry->key == NULL || entry->value == NULL){
+
+    if(entry == NULL)
+        return -1;
+
+    if(entry->key == NULL){
         return -1;
     }
-    free(entry->key);
-    data_destroy(entry->value);
+    if(entry->value == NULL){
+        return -1;
+    }
+    if(entry->key != NULL)
+        free(entry->key);
+    if(entry->value != NULL)
+        data_destroy(entry->value);
+
     free(entry);
 
     return 0;
