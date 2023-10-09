@@ -1,4 +1,3 @@
-
 #define _TABLE_H /* Módulo table */
 
 #include "../include/table.h"
