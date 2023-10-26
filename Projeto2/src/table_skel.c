@@ -134,7 +134,7 @@ int invoke(MessageT *msg, struct table_t *table){
                     j++;                //
                 }                       //
                                         //
-                msg->n_keys = j-1;      //não sei se é suposto por isto, mas parece acertado
+                msg->n_keys = j;        //não sei se é suposto por isto, mas parece acertado
                 msg->keys = keys;
                 i = 0;
             }
