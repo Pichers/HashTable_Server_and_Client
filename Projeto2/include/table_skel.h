@@ -1,8 +1,8 @@
 #ifndef _TABLE_SKEL_H
 #define _TABLE_SKEL_H
 
-#include "table.h"
-#include "sdmessage.pb-c.h"
+#include "../include/table.h"
+#include "../sdmessage.pb-c.h"
 
 /* Inicia o skeleton da tabela.
  * O main() do servidor deve chamar esta função antes de poder usar a
