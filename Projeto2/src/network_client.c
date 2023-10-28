@@ -82,12 +82,15 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
 
     if (write(sockfd, buf, msg_size) < 0){
         perror("Erro ao enviar mensagem");
+        free(buf);
         return NULL;
     }
 
     MessageT *msg_resposta = malloc(sizeof(MessageT));
     if (read(sockfd, msg_resposta, sizeof(MessageT)) < 0){
         perror("Erro ao receber mensagem");
+        free(buf);
+        free(msg_resposta);
         return NULL;
     }
 
