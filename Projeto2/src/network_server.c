@@ -51,8 +51,8 @@ int network_main_loop(int listening_socket, struct table_t *table){
     struct sockaddr_in client;
 
     socklen_t size_client;
+    MessageT *msg;
     
-
     // Faz listen
     if (listen(listening_socket, 0) < 0){
         perror("Erro ao executar listen");
@@ -64,7 +64,30 @@ int network_main_loop(int listening_socket, struct table_t *table){
     // Bloqueia a espera de pedidos de conexão
     while ((client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client)) != -1) {
         
-        network_receive(client_socket);
+        msg = network_receive(client_socket);
+
+        if(msg == NULL){
+            perror("Erro ao de-serializar mensagem");
+            close(client_socket);
+            close(listening_socket);
+            return -1;
+        }
+
+        int response = invoke(table, msg);
+
+        if(response == -1){
+            perror("Erro ao invocar função");
+            close(listening_socket);
+            close(client_socket);
+            return -1;
+        }
+
+        if(network_send(client_socket, msg) == -1){
+            perror("Erro ao enviar mensagem");
+            close(listening_socket);
+            close(client_socket);
+            return -1;
+        }
 
         close(client_socket);
     }
