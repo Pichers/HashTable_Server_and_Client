@@ -71,15 +71,15 @@ int network_main_loop(int listening_socket, struct table_t *table){
         return -1;
     }
 
-    MessageT *response = invoke(table, msg);
-    if(response == NULL){
+    int response = invoke(table, msg);
+    if(response == -1){
         perror("Erro ao invocar função");
         close(listening_socket);
         close(client_socket);
         return -1;
     }
 
-    if(network_send(client_socket, response) == -1){
+    if(network_send(client_socket, msg) == -1){
         perror("Erro ao enviar mensagem");
         close(listening_socket);
         close(client_socket);
@@ -88,7 +88,6 @@ int network_main_loop(int listening_socket, struct table_t *table){
 
     close(listening_socket);
     close(client_socket);
-    return 0;
 }
 
 /* A função network_receive() deve:
