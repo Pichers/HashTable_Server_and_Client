@@ -33,8 +33,9 @@ int table_skel_destroy(struct table_t *table){
     return i;
 }
 
-int handleError(struct MessageT* msg){
+int handleError(MessageT* msg){
     msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
+
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
     return -1;

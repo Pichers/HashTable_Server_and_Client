@@ -12,31 +12,37 @@
  * Retorna o descritor do socket ou -1 em caso de erro.
  */
 int network_server_init(short port){
-    int sockfd;
+    int skt;
     struct sockaddr_in server;
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+    if(port < 0)
+        return -1;
+    
+    if ((skt = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
         perror("Erro ao criar socket");
         return -1;
     }
 
+    // Preenche estrutura server para bind
     server.sin_family = AF_INET;
-    server.sin_port = htons(port);
-    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons(port); /* port é a porta TCP */
+    server.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0){
-        perror("Erro ao vincular socket");
-        close(sockfd);
+    // Faz bind
+    if (bind(skt, (struct sockaddr *) &server, sizeof(server)) < 0){
+        perror("Erro ao fazer bind");
+        close(skt);
         return -1;
-    }
+    };
 
-    if (listen(sockfd, 0) < 0){
-        perror("Erro ao colocar-se à escuta");
-        close(sockfd);
+     // Faz listen
+    if (listen(skt, 0) < 0){
+        perror("Erro ao executar listen");
+        close(skt);
         return -1;
-    }
+    };
 
-    return sockfd;
+    return skt;
 }
 
 /* A função network_main_loop() deve:
@@ -50,44 +56,51 @@ int network_server_init(short port){
  * caso retorna -1.
  */
 int network_main_loop(int listening_socket, struct table_t *table){
-    if(listening_socket == -1 || table == NULL)
+
+    if(listening_socket == -1)
+        return -1;
+    if(table == NULL)
         return -1;
 
     int client_socket;
     struct sockaddr_in client;
-    socklen_t size = sizeof(client);
 
-    if ((client_socket = accept(listening_socket, (struct sockaddr *)&client, &size)) < 0){
-        perror("Erro ao aceitar conexão");
-        close(listening_socket);
-        return -1;
-    }
+    socklen_t size_client;
+    MessageT *msg;
+    
+    printf("Servidor 'a espera de dados\n");
 
-    MessageT *msg = network_receive(client_socket);
-    if(msg == NULL){
-        perror("Erro ao receber mensagem");
-        close(listening_socket);
+    // Bloqueia a espera de pedidos de conexão
+    while ((client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client)) != -1) {
+        
+        msg = network_receive(client_socket);
+
+        if(msg == NULL){
+            perror("Erro ao de-serializar mensagem");
+            close(client_socket);
+            close(listening_socket);
+            return -1;
+        }
+
+        int response = invoke(table, msg);
+
+        if(response == -1){
+            perror("Erro ao invocar função");
+            close(listening_socket);
+            close(client_socket);
+            return -1;
+        }
+
+        if(network_send(client_socket, msg) == -1){
+            perror("Erro ao enviar mensagem");
+            close(listening_socket);
+            close(client_socket);
+            return -1;
+        }
+
         close(client_socket);
-        return -1;
     }
-
-    int response = invoke(table, msg);
-    if(response == -1){
-        perror("Erro ao invocar função");
-        close(listening_socket);
-        close(client_socket);
-        return -1;
-    }
-
-    if(network_send(client_socket, msg) == -1){
-        perror("Erro ao enviar mensagem");
-        close(listening_socket);
-        close(client_socket);
-        return -1;
-    }
-
     close(listening_socket);
-    close(client_socket);
 }
 
 /* A função network_receive() deve:
@@ -97,12 +110,16 @@ int network_main_loop(int listening_socket, struct table_t *table){
  * Retorna a mensagem com o pedido ou NULL em caso de erro.
  */
 MessageT *network_receive(int client_socket){
-    if(client_socket == -1)
-        return NULL;
 
     char *buffer = malloc(sizeof(char) * 1024);
     int bytes_read = 0;
     int total_bytes_read = 0;
+
+    MessageT* msg;
+
+     
+    if(client_socket == -1)
+        return NULL;
 
     while((bytes_read = read(client_socket, buffer + total_bytes_read, 1024)) > 0){
         total_bytes_read += bytes_read;
@@ -115,7 +132,7 @@ MessageT *network_receive(int client_socket){
         return NULL;
     }
 
-    MessageT *msg = message_t__unpack(NULL, total_bytes_read, buffer);
+    msg = message_t__unpack(NULL, total_bytes_read, buffer);
     free(buffer);
     return msg;
 }
@@ -126,7 +143,9 @@ MessageT *network_receive(int client_socket){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int network_send(int client_socket, MessageT *msg){
-    if(client_socket == -1 || msg == NULL)
+    if(client_socket == -1)
+        return -1;
+    if(msg == NULL)
         return -1;
 
     int msg_size = message_t__get_packed_size(msg);
