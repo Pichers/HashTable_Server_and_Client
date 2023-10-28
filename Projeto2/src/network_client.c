@@ -1,8 +1,15 @@
-#ifndef _NETWORK_CLIENT_H
-#define _NETWORK_CLIENT_H
+#include <stddef.h> 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
 
-#include "client_stub.h"
-#include "sdmessage.pb-c.h"
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+#include "../include/client_stub.h"
+#include "../include/client_stub-private.h"
+#include "../sdmessage.pb-c.h"
 
 /* Esta função deve:
  * - Obter o endereço do servidor (struct sockaddr_in) com base na
@@ -12,25 +19,46 @@
  *   na estrutura rtable;
  * - Retornar 0 (OK) ou -1 (erro).
  */
-int network_connect(struct rtable_t *rtable){
-    struct sockaddr_in server;
-    int sockfd;
+int network_connect(struct rtable_t *rtable) {
+    // Criar um socket
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+        perror("Erro ao criar o socket");
+        return -1;
+    }
+    int server_port = rtable->server_port;
+    const char *server_addr = rtable->server_address;
+    struct sockaddr_in myaddr;
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        perror("Erro ao criar socket");
+    int s; 
+
+    myaddr.sin_family = AF_INET;
+    myaddr.sin_port = htons(server_port);
+
+
+    if (inet_aton(server_addr, &myaddr.sin_addr) == 0) {
+        perror("Erro ao converter endereço IP");
         return -1;
     }
 
-    server.sin_family = AF_INET;
-    server.sin_port = htons(rtable->port);
-    server.sin_addr.s_addr = inet_addr(rtable->ip);
-
-    if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0){
-        perror("Erro ao conectar-se ao servidor");
+    s = socket(PF_INET, SOCK_STREAM, 0);
+    if (bind(s, (struct sockaddr*)&myaddr, sizeof(myaddr)) == -1) {
+        perror("Erro ao vincular o socket");
         return -1;
     }
 
-    rtable->socket = sockfd;
+
+    struct sockaddr server_sockaddr;
+    memset(&server_sockaddr, 0, sizeof(server_sockaddr));
+    server_sockaddr = *(struct sockaddr *)&myaddr;
+
+    if (connect(s, (struct sockaddr *)&server_sockaddr, sizeof(server_sockaddr)) == -1) {
+        perror("Erro ao conectar ao servidor");
+        close(sockfd);
+        return -1;
+    }
+
+    rtable->sockfd = sockfd;
     return 0;
 }
 
@@ -47,7 +75,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
     if(rtable == NULL || msg == NULL)
         return NULL;
     
-    int sockfd = rtable->socket;
+    int sockfd = rtable->sockfd;
     int msg_size = message_t__get_packed_size(msg);
     void *buf = malloc(msg_size);
     message_t__pack(msg, buf);
@@ -73,8 +101,6 @@ int network_close(struct rtable_t *rtable){
     if(rtable == NULL)
         return -1;
     
-    close(rtable->socket);
+    close(rtable->sockfd);
     return 0;
 }
-
-#endif

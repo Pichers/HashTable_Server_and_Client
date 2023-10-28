@@ -12,6 +12,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 struct table_t {
     int size;
     struct list_t **lists;
