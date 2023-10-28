@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../include/table_skel.h"
+#include "../include/entry.h"
 #include "../include/table.h"
 #include "../sdmessage.pb-c.h"
 
@@ -15,7 +17,7 @@ struct table_t *table_skel_init(int n_lists){
     struct table_t* table = table_create(n_lists);
 
     if (table == NULL)
-        return NULL
+        return NULL;
 
     return table;
 }
@@ -31,7 +33,7 @@ int table_skel_destroy(struct table_t *table){
     return i;
 }
 
-void handleError(struct MessageT* msg){
+int handleError(struct MessageT* msg){
     msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
@@ -54,15 +56,15 @@ int invoke(MessageT *msg, struct table_t *table){
 
     struct MessageT__Opcode* opCode = msg->opcode;
 
-    switch(opCode) {
-        case MESSAGE_T__OPCODE__OP_PUT:
+    switch((int) opCode) {
+        case (int) MESSAGE_T__OPCODE__OP_PUT:
             
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
             char* key = msg->key;
 
-            struct data_t* data = data_create(msg->value->len, msg->value->data);
+            struct data_t* data = data_create(msg->value.len, msg->value.data);
 
             int i = table_put(table, key, data);
             msg->key = NULL;
@@ -72,7 +74,7 @@ int invoke(MessageT *msg, struct table_t *table){
             }
             
             break;
-        case MESSAGE_T__OPCODE__OP_GET:
+        case (int) MESSAGE_T__OPCODE__OP_GET:
 
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_VALUE;
@@ -85,13 +87,13 @@ int invoke(MessageT *msg, struct table_t *table){
                 return handleError(msg);
             }
             else{
-                msg->value = dataValue;
-                free(msg->entry)
+                msg->value.data = dataValue->data;
+                free(msg->entry);
                 msg->key = NULL;
             }
 
             break;
-        case MESSAGE_T__OPCODE__OP_DEL:
+        case (int) MESSAGE_T__OPCODE__OP_DEL:
             
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
@@ -107,7 +109,7 @@ int invoke(MessageT *msg, struct table_t *table){
             }
 
             break;
-        case MESSAGE_T__OPCODE__OP_SIZE:
+        case (int) MESSAGE_T__OPCODE__OP_SIZE:
             
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
@@ -120,7 +122,7 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->result = size;
 
             break;
-        case MESSAGE_T__OPCODE__OP_GETKEYS:
+        case (int) MESSAGE_T__OPCODE__OP_GETKEYS:
             
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
@@ -141,15 +143,15 @@ int invoke(MessageT *msg, struct table_t *table){
             }
 
             break;
-        case MESSAGE_T__OPCODE__OP_GETTABLE:
+        case (int) MESSAGE_T__OPCODE__OP_GETTABLE:
             
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
-            struct char** keys = table_get_keys(table);
+            char** keys = table_get_keys(table);
             
             if(keys == NULL){
-                return handleError(table, i);
+                return handleError(msg);
             }
 
             int nKeys = 0;
