@@ -32,6 +32,13 @@ int network_server_init(short port){
         return -1;
     };
 
+     // Faz listen
+    if (listen(skt, 0) < 0){
+        perror("Erro ao executar listen");
+        close(skt);
+        return -1;
+    };
+
     return skt;
 }
 
@@ -53,12 +60,6 @@ int network_main_loop(int listening_socket, struct table_t *table){
     socklen_t size_client;
     MessageT *msg;
     
-    // Faz listen
-    if (listen(listening_socket, 0) < 0){
-        perror("Erro ao executar listen");
-        close(listening_socket);
-        return -1;
-    };
     printf("Servidor 'a espera de dados\n");
 
     // Bloqueia a espera de pedidos de conexão
