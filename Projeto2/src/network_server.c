@@ -1,8 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
 #include "../include/table.h"
 #include "../sdmessage.pb-c.h"
-#include <arpa/inet.h>
-
-int const MAX_MSG = 32767;
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.
@@ -22,7 +25,7 @@ int network_server_init(short port){
 
     // Preenche estrutura server para bind
     server.sin_family = AF_INET;
-    server.sin_port = htons(atoi(port)); /* port é a porta TCP */
+    server.sin_port = htons(port); /* port é a porta TCP */
     server.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // Faz bind
@@ -53,6 +56,11 @@ int network_server_init(short port){
  * caso retorna -1.
  */
 int network_main_loop(int listening_socket, struct table_t *table){
+
+    if(listening_socket == -1)
+        return -1;
+    if(table == NULL)
+        return -1;
 
     int client_socket;
     struct sockaddr_in client;
@@ -135,7 +143,9 @@ MessageT *network_receive(int client_socket){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int network_send(int client_socket, MessageT *msg){
-    if(client_socket == -1 || msg == NULL)
+    if(client_socket == -1)
+        return -1;
+    if(msg == NULL)
         return -1;
 
     int msg_size = message_t__get_packed_size(msg);
