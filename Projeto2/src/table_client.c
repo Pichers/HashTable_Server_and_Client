@@ -1,54 +1,98 @@
-    struct sockaddr_in server;
-    int sockfd;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "../include/client_stub.h"
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        perror("Erro ao criar socket");
-        return -1;
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Uso: %s <server_address:port>\n", argv[0]);
+        exit(1);
     }
 
-    server.sin_family = AF_INET;
-    server.sin_port = htons(rtable->port);
-    server.sin_addr.s_addr = inet_addr(rtable->ip);
-
-    if (connect(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0){
-        perror("Erro ao conectar-se ao servidor");
-        return -1;
+    // Conecta ao servidor
+    struct rtable_t *rtable = rtable_connect(argv[1]);
+    if (rtable == NULL) {
+        fprintf(stderr, "Falha ao conectar ao servidor\n");
+        exit(1);
     }
 
-    rtable->socket = sockfd;
+    char input[256];
+    char *token;
+
+    while (1) {
+        printf("Comandos disponíveis:\n");
+        printf("put <key> <data>\n");
+        printf("get <key>\n");
+        printf("del <key>\n");
+        printf("size\n");
+        printf("getkeys\n");
+        printf("gettable\n");
+        printf("quit\n");
+        printf("Digite um comando: ");
+
+        fgets(input, sizeof(input), stdin);
+        token = strtok(input, " \n");
+
+        if (token == NULL) {
+            printf("Comando inválido. Tente novamente.\n");
+            continue;
+        }
+
+        if (strcmp(token, "put") == 0) {
+            // Processar comando put
+            char *key = strtok(NULL, " \n");
+            char *data = strtok(NULL, "\n");
+
+            if (key == NULL || data == NULL) {
+                printf("Comando put requer <key> e <data>\n");
+            } else {
+                // Chamar a função rtable_put
+                // Implemente o código para chamar rtable_put aqui
+            }
+        } else if (strcmp(token, "get") == 0) {
+            // Processar comando get
+            char *key = strtok(NULL, " \n");
+
+            if (key == NULL) {
+                printf("Comando get requer <key>\n");
+            } else {
+                // Chamar a função rtable_get
+                // Implemente o código para chamar rtable_get aqui
+            }
+        } else if (strcmp(token, "del") == 0) {
+            // Processar comando del
+            char *key = strtok(NULL, " \n");
+
+            if (key == NULL) {
+                printf("Comando del requer <key>\n");
+            } else {
+                // Chamar a função rtable_del
+                // Implemente o código para chamar rtable_del aqui
+            }
+        } else if (strcmp(token, "size") == 0) {
+            // Processar comando size
+            // Chamar a função rtable_size
+            // Implemente o código para chamar rtable_size aqui
+        } else if (strcmp(token, "getkeys") == 0) {
+            // Processar comando getkeys
+            // Chamar a função rtable_get_keys
+            // Implemente o código para chamar rtable_get_keys aqui
+        } else if (strcmp(token, "gettable") == 0) {
+            // Processar comando gettable
+            // Chamar a função rtable_get_table
+            // Implemente o código para chamar rtable_get_table aqui
+        } else if (strcmp(token, "quit") == 0) {
+            // Encerra o programa cliente
+            break;
+        } else {
+            printf("Comando desconhecido. Tente novamente.\n");
+        }
+    }
+
+    // Desconecta do servidor
+    if (rtable_disconnect(rtable) == -1) {
+        fprintf(stderr, "Erro ao desconectar do servidor\n");
+    }
+
     return 0;
-
-
-    #ifndef _NETWORK_CLIENT_H
-#define _NETWORK_CLIENT_H
-
-#include "client_stub.h"
-#include "sdmessage.pb-c.h"
-
-/* Esta função deve:
- * - Obter o endereço do servidor (struct sockaddr_in) com base na
- *   informação guardada na estrutura rtable;
- * - Estabelecer a ligação com o servidor;
- * - Guardar toda a informação necessária (e.g., descritor do socket)
- *   na estrutura rtable;
- * - Retornar 0 (OK) ou -1 (erro).
- */
-int network_connect(struct rtable_t *rtable){}
-
-/* Esta função deve:
- * - Obter o descritor da ligação (socket) da estrutura rtable_t;
- * - Serializar a mensagem contida em msg;
- * - Enviar a mensagem serializada para o servidor;
- * - Esperar a resposta do servidor;
- * - De-serializar a mensagem de resposta;
- * - Tratar de forma apropriada erros de comunicação;
- * - Retornar a mensagem de-serializada ou NULL em caso de erro.
- */
-MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg);
-
-/* Fecha a ligação estabelecida por network_connect().
- * Retorna 0 (OK) ou -1 (erro).
- */
-int network_close(struct rtable_t *rtable);
-
-#endif
+}
