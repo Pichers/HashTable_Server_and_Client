@@ -77,22 +77,74 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
     
     int sockfd = rtable->sockfd;
     int msg_size = message_t__get_packed_size(msg);
-    void *buf = malloc(msg_size);
-    message_t__pack(msg, buf);
 
-    if (write(sockfd, buf, msg_size) < 0){
+
+    //send short
+    short msg_size_short = msg_size;
+    short msg_size_network = htons(msg_size_short);
+
+    if (write(sockfd, &msg_size_network, sizeof(short)) < 0) {
+        perror("Error sending message size");
+        return NULL;
+    }
+
+
+
+    //send msg
+    void *bufW = malloc(msg_size);
+    if (bufW == NULL) {
+        perror("??wtf??");
+        return NULL;
+    }
+    message_t__pack(msg, bufW);
+
+    if (write(sockfd, bufW, msg_size) < 0){
         perror("Erro ao enviar mensagem");
-        free(buf);
+        free(bufW);
         return NULL;
     }
 
-    MessageT *msg_resposta = malloc(sizeof(MessageT));
-    if (read(sockfd, msg_resposta, sizeof(MessageT)) < 0){
-        perror("Erro ao receber mensagem");
-        free(buf);
-        free(msg_resposta);
+    free(bufW);
+
+
+    //receive short
+    short response_size_short;
+
+    if (read(sockfd, &response_size_short, sizeof(short)) < 0) {
+        perror("Error receiving response size");
+        free(bufW);
         return NULL;
     }
+
+    int response_size = ntohs(response_size_short);
+
+    if (response_size <= 0) {
+        perror("Invalid response size");
+        free(bufW);
+        return NULL;
+    }
+
+
+    //receive msg
+
+    void *bufR = malloc(response_size);
+
+
+
+    if (bufR == NULL) {
+        perror("??wtf??");
+        free(bufR);
+        return NULL;
+    }
+
+    if (read(sockfd, bufR, sizeof(MessageT)) < 0){
+        perror("Erro ao receber mensagem");
+        free(bufW);
+        free(bufR);
+        return NULL;
+    }
+
+    MessageT *msg_resposta = message_t__unpack(NULL, response_size, bufR);
 
     return msg_resposta;
 }
