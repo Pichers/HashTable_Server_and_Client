@@ -167,7 +167,7 @@ int network_send(int client_socket, MessageT *msg){
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
 int network_server_close(int socket){
-    if(socket == -1)
+    if(socket < 0)
         return -1;
 
     if(close(socket) == -1){

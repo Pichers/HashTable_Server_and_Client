@@ -67,14 +67,14 @@ int main(int argc, char *argv[]) {
             } else {
                 // Chamar a função rtable_get
                 // Implemente o código para chamar rtable_get aqui
-                struct entry_t* entry = rtable_get(rtable, key);
-                if (entry == NULL) {
+                struct data_t* data = rtable_get(rtable, key);
+                if (data == NULL) {
                     printf("Elemento nao encontrado, ou erro ao obte-lo\n");
                 }
                 else{
-                    printf("Elemento encontrado: %s\n", entry->value->data);
+                    printf("Elemento encontrado: %s\n", data->data);
                 }
-                entry_destroy(entry);
+                entry_destroy(data);
             }
         } else if (strcmp(token, "del") == 0) {
             // Processar comando del

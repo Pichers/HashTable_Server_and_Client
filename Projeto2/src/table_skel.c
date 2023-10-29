@@ -68,6 +68,7 @@ int invoke(MessageT *msg, struct table_t *table){
             struct data_t* data = data_create(msg->value.len, msg->value.data);
 
             int i = table_put(table, key, data);
+            free(msg->key);
             msg->key = NULL;
 
             if(i == -1){
@@ -100,14 +101,16 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
             char* key = msg->key;
+            struct entry_t* entry = table_get(table, key);
 
-            int i = table_remove(table, key);
-
-            free(msg->key);
-
-            if(i = -1){
+            if(entry_destroy(entry) == -1){
                 return handleError(msg);
             }
+            if(table_remove(table, key) == -1){
+                return handleError(msg);
+            }
+            free(msg->key);
+            msg->key = NULL;
 
             break;
         case (int) MESSAGE_T__OPCODE__OP_SIZE:
@@ -135,11 +138,11 @@ int invoke(MessageT *msg, struct table_t *table){
             }
             else{
                 int j = 0;
-                while(keys[j] != NULL){ //
-                    j++;                //
-                }                       //
-                                        //
-                msg->n_keys = j;        //não sei se é suposto por isto, mas parece acertado
+                while(keys[j] != NULL){
+                    j++;
+                }                      
+
+                msg->n_keys = j; 
                 msg->keys = keys;
             }
 
