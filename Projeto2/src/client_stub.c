@@ -25,7 +25,7 @@ struct rtable_t *rtable_connect(char *address_port){
         return NULL;
     }
     
-    rtable->server_port = address_port;
+    rtable->server_address = address_port;
     
     return rtable;
 }
@@ -48,23 +48,31 @@ int rtable_disconnect(struct rtable_t *rtable){
 int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
     if(rtable == NULL || entry == NULL)
         return -1;
-    
+    if(rtable->entry->key!=NULL)
+        rtable->entry->value=entry->value;
     return 0;
 }
 
 /* Retorna o elemento da tabela com chave key, ou NULL caso não exista
  * ou se ocorrer algum erro.
  */
-struct data_t *rtable_get(struct rtable_t *rtable, char *key);
+struct data_t *rtable_get(struct rtable_t *rtable, char *key){
+    if(rtable==NULL || key ==NULL)
+        return NULL;
+    if(rtable->entry->key==key)
+        return rtable->entry->value;
+}
 
 /* Função para remover um elemento da tabela. Vai libertar 
  * toda a memoria alocada na respetiva operação rtable_put().
  * Retorna 0 (OK), ou -1 (chave não encontrada ou erro).
  */
 int rtable_del(struct rtable_t *rtable, char *key){
-    if(rtable == NULL || key == NULL)
+    if(rtable == NULL || key == NULL || rtable->entry==NULL)
         return -1;
-    
+    if(rtable->entry->key==key){
+        free(rtable->entry);
+    }
     return 0;
 }
 
@@ -73,8 +81,7 @@ int rtable_del(struct rtable_t *rtable, char *key){
 int rtable_size(struct rtable_t *rtable){
     if(rtable == NULL)
         return -1;
-    
-    return 0;
+    return rtable->size;
 }
 
 /* Retorna um array de char* com a cópia de todas as keys da tabela,
@@ -84,8 +91,19 @@ int rtable_size(struct rtable_t *rtable){
 char **rtable_get_keys(struct rtable_t *rtable){
     if(rtable == NULL)
         return NULL;
+
+    int num_keys=rtable->size;
+    if(num_keys==NULL)
+        return NULL;
     
-    return NULL;
+    /**aloca memoria para num_keys+1 chars*/
+    char **keys=(char **)malloc((num_keys + 1) * sizeof(char *)); 
+    for (int i = 0; i < num_keys; i++)
+    {
+        keys[i]=strdup(rtable->entry[i].key);
+    }
+    keys[num_keys]=NULL;
+    return keys;
 }
 
 /* Liberta a memória alocada por rtable_get_keys().
@@ -93,7 +111,10 @@ char **rtable_get_keys(struct rtable_t *rtable){
 void rtable_free_keys(char **keys){
     if(keys == NULL)
         return;
-    
+    for (int i = 0; i < keys[i]!=NULL; i++)
+    {
+        free(keys[i]);
+    }
     free(keys);
 }
 
@@ -112,6 +133,10 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
 void rtable_free_entries(struct entry_t **entries){
     if(entries == NULL)
         return;
+    for (int i = 0; i < entries[i]!=NULL; i++)
+    {
+        free(entries[i]);
+    }
     
     free(entries);
 }
