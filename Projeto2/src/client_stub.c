@@ -37,6 +37,9 @@ int rtable_disconnect(struct rtable_t *rtable){
     if(rtable == NULL)
         return -1;
     
+    free(rtable->server_address);
+    entry_destroy(rtable->entry);
+    free(rtable->entry);
     free(rtable);
     return 0;
 }
