@@ -18,7 +18,7 @@ make: $(EXECS)
 # 	$(CC) $^ -o $@
 
 $(BIN_DIR)/table_client: $(OBJ_DIR)/table_client.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/client_stub.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o  $(OBJ_DIR)/network_client.o $(OBJ_DIR)/sdmessage.pb-c.o
-	$(CC) $^ -o $@ -lprotobuf-c   
+	$(CC) $^ -o $@ -lprotobuf-c  
 
 
 
