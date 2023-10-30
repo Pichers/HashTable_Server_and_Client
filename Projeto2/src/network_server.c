@@ -138,7 +138,7 @@ MessageT *network_receive(int client_socket){
         return NULL;
     }
 
-    MessageT* msg = message_t__unpack(NULL, total_bytes_read, buffer);
+    MessageT* msg = message_t__unpack(NULL, response_size, buffer);
     free(buffer);
     return msg;
 }
