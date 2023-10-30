@@ -10,7 +10,7 @@ LIB_DIR = lib
 CC = gcc
 CFLAGS = -Wall -MMD -MP -g -MF $(DEP_DIR)/$*.d -I $(INC_DIR)
 
-EXECS = $(BIN_DIR)/table_client # $(BIN_DIR)/table_server 
+EXECS = $(BIN_DIR)/table_client $(BIN_DIR)/table_server 
 
 make: $(EXECS)
 
