@@ -12,9 +12,12 @@ CFLAGS = -Wall -MMD -MP -g -MF $(DEP_DIR)/$*.d -I $(INC_DIR)
 EXECS = $(BIN_DIR)/table_client $(BIN_DIR)/table_server 
 
 
+all: files $(EXECS)
 
-make: $(EXECS)
-
+files:
+	cp -r ./stor/* ./obj
+	mkdir obj
+	mkdir dependencies
 
 $(BIN_DIR)/table_server: $(OBJ_DIR)/table_server.o $(OBJ_DIR)/table_skel.o $(OBJ_DIR)/network_server.o $(OBJ_DIR)/sdmessage.pb-c.o $(OBJ_DIR)/table.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/list.o
 	$(CC) $^ -o $@ -lprotobuf-c 
