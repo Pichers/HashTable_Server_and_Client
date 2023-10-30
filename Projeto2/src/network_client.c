@@ -112,7 +112,6 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
 
     if (read(sockfd, &response_size_short, sizeof(short)) < 0) {
         perror("Error receiving response size");
-        free(bufW);
         return NULL;
     }
 
@@ -120,7 +119,6 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
 
     if (response_size <= 0) {
         perror("Invalid response size");
-        free(bufW);
         return NULL;
     }
 
@@ -128,9 +126,6 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
     //receive msg
 
     void *bufR = malloc(response_size);
-
-
-
     if (bufR == NULL) {
         perror("??wtf??");
         free(bufR);
@@ -139,13 +134,13 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
 
     if (read(sockfd, bufR, sizeof(MessageT)) < 0){
         perror("Erro ao receber mensagem");
-        free(bufW);
         free(bufR);
         return NULL;
     }
 
-    MessageT *msg_resposta = message_t__unpack(NULL, response_size, bufR);
 
+    MessageT *msg_resposta = message_t__unpack(NULL, response_size, bufR);
+    free(bufR);
     return msg_resposta;
 }
 
