@@ -41,7 +41,7 @@ struct rtable_t *rtable_connect(char *address_port) {
     }
 
     // Create and initialize the rtable structure
-    struct rtable_t *rtable = (struct rtable_t *)malloc(sizeof(struct rtable_t));
+    struct rtable_t *rtable = (struct rtable_t *) malloc(sizeof(struct rtable_t));
     if (rtable == NULL) {
         free(hostname);
         return NULL;
@@ -49,6 +49,13 @@ struct rtable_t *rtable_connect(char *address_port) {
 
     rtable->server_address = hostname;
     rtable->server_port = atoi(port_str);
+
+    int i = network_connect(rtable->server_address, rtable->server_port);
+    if (i == -1){
+        perror("Error network connecting");
+        return NULL;
+    }
+    
 
     return rtable;
 }
