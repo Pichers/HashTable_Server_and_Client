@@ -47,17 +47,29 @@ int main(int argc, char *argv[]) {
             char *key = strtok(NULL, " \n");
             char *data = strtok(NULL, "\n");
 
-            struct data_t* datat = data_create(strlen(data), data);
-
             if (key == NULL || data == NULL) {
                 printf("Comando put requer <key> e <data>\n");
             } else {
-                struct entry_t* entry = entry_create(key, datat);
+                char* tempData = strdup(data);
+                struct data_t* datat = data_create(strlen(data), tempData);
+                if (datat == NULL) {
+                    printf("Erro ao criar data\n");
+                    exit(1);
+                }
+                char* tempKey = strdup(key);
+
+                struct entry_t* entry = entry_create(tempKey, datat);
+                if (entry == NULL) {
+                    printf("Erro ao criar entry\n");
+                    exit(1);
+                }
 
                 int a = rtable_put(rtable, entry);
                 if(a == -1)
                     printf("Erro ao inserir elemento\n");
                 
+                printf("Inserindo elemento: %s\n", entry->key);
+
                 entry_destroy(entry);
             }
         } else if (strcmp(token, "get") == 0) {
@@ -93,7 +105,7 @@ int main(int argc, char *argv[]) {
                     printf("Elemento nao encontrado, ou erro ao apaga-lo\n");
                 }
                 else{
-                    printf("Elemento com a chave %s apagado", key);
+                    printf("Elemento com a chave %s apagado\n", key);
                 }
             }
         } else if (strcmp(token, "size") == 0) {
@@ -116,10 +128,11 @@ int main(int argc, char *argv[]) {
             if(keys == NULL){
                 printf("Erro ao obter chaves da tabela\n");
             }else{
-                printf("Chaves da tabela: ");
+                printf("Chaves da tabela: \n");
                 for (int i = 0; keys[i] != NULL; i++){
-                    printf("%s ", keys[i]);
+                    printf("%s \n", keys[i]);
                 }
+                rtable_free_keys(keys);
             }
         } else if (strcmp(token, "gettable") == 0) {
             // Processar comando gettable
@@ -128,43 +141,27 @@ int main(int argc, char *argv[]) {
             struct entry_t** entries = rtable_get_table(rtable);
             if(entries == NULL){
                 printf("Erro ao obter tabela\n");
-                //free(entries);
             }
             else{
-                printf("Tabela: ");
+                printf("Tabela: \n");
                 for (int i = 0; entries[i] != NULL; i++){
-                    printf("%s :: %s", entries[i]->key,(char*) entries[i]->value->data);
+                    printf("%s :: %s \n", entries[i]->key,(char*) entries[i]->value->data);
                     entry_destroy(entries[i]);
                 }
-                //free(entries);
+                rtable_free_entries(entries);
             }
             
-            if(entries == NULL){
-                printf("Erro ao obter tabela\n");
-            }
-            else{
-                printf("Tabela: ");
-                for (int i = 0; entries[i] != NULL; i++){
-                    printf("%s ",(char*) entries[i]->value->data);
-                }
-            }
         } else if (strcmp(token, "quit") == 0) {
             // Encerra o programa cliente
-            rtable_free_entries(rtable_get_table(rtable));
 
             if(rtable_disconnect(rtable) == -1){
                 printf("Erro ao desconectar do servidor\n");
             }
-
+            printf("Bye bye client\n");
             break;
         } else {
             help();
         }
-    }
-
-    // Desconecta do servidor
-    if (rtable_disconnect(rtable) == -1) {
-        fprintf(stderr, "Erro ao desconectar do servidor\n");
     }
 
     return 0;

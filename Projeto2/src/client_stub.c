@@ -64,9 +64,13 @@ struct rtable_t *rtable_connect(char *address_port) {
  * Retorna 0 se tudo correr bem, ou -1 em caso de erro.
  */
 int rtable_disconnect(struct rtable_t *rtable){
-    if(rtable == NULL)
+    if(rtable == NULL){
+        printf("a");
         return -1;
+    }
+        
     if(rtable->sockfd < 0){
+        printf("a");
         return -1;
     }
     if(close(rtable->sockfd) == -1){
@@ -87,24 +91,47 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
     if(rtable == NULL || entry == NULL)
         return -1;
     
-    MessageT* msg;
+    MessageT* msg = malloc(sizeof(MessageT));
+    if (msg == NULL) {
+        printf("Error allocating memory for message\n");
+        return -1;
+    }
     message_t__init(msg);
 
     if(msg == NULL){
         printf("Error allocating memory for message\n");
         return -1;
     }
+    
     msg->opcode = MESSAGE_T__OPCODE__OP_PUT;
     msg->c_type = MESSAGE_T__C_TYPE__CT_ENTRY;
 
-    msg->entry = entry;
+    EntryT* e = malloc(sizeof(EntryT));
+    entry_t__init(e);
+
+    e->key = entry->key;
+
+    size_t entryPackedLen = entry_t__get_packed_size(e);
+    uint8_t *entryPacked = malloc(entryPackedLen);
+    
+    if(entryPacked == NULL){
+        printf("Error allocating memory for entry\n");
+        return -1;
+    }
+
+    memcpy(entryPacked, entry->value->data, entryPackedLen);
+
+    e->value.len = entryPackedLen;
+    e->value.data = entryPacked;
+
+    msg->entry = e;
 
     if(network_send_receive(rtable, msg) == NULL){
         printf("Error sending message\n");
-        free(msg);
+        // free(msg);
         return -1;
     }
-    free(msg);
+    // free(msg);
 
     return 0;
 }
@@ -116,37 +143,36 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key){
     if(rtable==NULL || key ==NULL)
         return NULL;
     
-    MessageT* msg;
-    message_t__init(msg);
-    MessageT* ret;
-
-    if(msg == NULL){
+    MessageT* msg = malloc(sizeof(MessageT));
+    if (msg == NULL) {
         printf("Error allocating memory for message\n");
         return NULL;
     }
+    message_t__init(msg);
+
+    MessageT* ret = malloc(sizeof(MessageT));
+    if (ret == NULL) {
+        printf("Error allocating memory for return message\n");
+        return NULL;
+    }
+    message_t__init(ret);
+
     msg->opcode = MESSAGE_T__OPCODE__OP_GET;
     msg->c_type = MESSAGE_T__C_TYPE__CT_KEY;
 
     msg->key = key;
 
     ret = network_send_receive(rtable, msg);
-    
-    if(ret == NULL){
-        printf("Error sending message\n");
-        free(msg);
-        return NULL;
-    }
 
     struct data_t* data = data_create(ret->value.len,ret->value.data);
     if(data == NULL){
         printf("Error creating data\n");
-        free(msg);
-        free(ret);
+        // message_t__free_unpacked(msg, NULL);
+        // message_t__free_unpacked(ret, NULL);
         return NULL;
     }
-
-    free(msg);
-    free(ret);
+    // message_t__free_unpacked(msg, NULL);
+    // message_t__free_unpacked(ret, NULL);
     return data;
 }
 
@@ -158,24 +184,24 @@ int rtable_del(struct rtable_t *rtable, char *key){
     if(rtable == NULL || key == NULL)
         return -1;
 
-    MessageT* msg;
-    message_t__init(msg);
-
-    if(msg == NULL){
+    MessageT* msg = malloc(sizeof(MessageT));
+    if (msg == NULL) {
         printf("Error allocating memory for message\n");
         return -1;
     }
+    message_t__init(msg);
+
     msg->opcode = MESSAGE_T__OPCODE__OP_DEL;
     msg->c_type = MESSAGE_T__C_TYPE__CT_KEY;
 
     msg->key = key;
     if(network_send_receive(rtable, msg) == NULL){
         printf("Error sending message\n");
-        free(msg);
+        // message_t__free_unpacked(msg, NULL);
         return -1;
     }
 
-    free(msg);
+    // message_t__free_unpacked(msg, NULL);
     
     return 0;
 }
@@ -186,24 +212,30 @@ int rtable_size(struct rtable_t *rtable){
     if(rtable == NULL)
         return -1;
 
-    MessageT* msg;
-    message_t__init(msg);
-    MessageT* ret;
-
-    if(msg == NULL){
+    MessageT* msg = malloc(sizeof(MessageT));
+    if (msg == NULL) {
         printf("Error allocating memory for message\n");
         return -1;
     }
+    message_t__init(msg);
+
+    MessageT* ret = malloc(sizeof(MessageT));
+    if (ret == NULL) {
+        printf("Error allocating memory for message\n");
+        return -1;
+    }
+    message_t__init(ret);
+
     msg->opcode = MESSAGE_T__OPCODE__OP_SIZE;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
     if((ret = network_send_receive(rtable, msg)) == NULL){
         printf("Error sending message\n");
-        free(msg);
-        free(ret);
+        // message_t__free_unpacked(msg, NULL);
         return -1;
-    }
-    free(msg);
+    }    
+    // message_t__free_unpacked(msg, NULL);
+    // message_t__free_unpacked(ret, NULL);
     return ret->result;
 }
 
@@ -215,28 +247,36 @@ char **rtable_get_keys(struct rtable_t *rtable){
     if(rtable == NULL)
         return NULL;
 
-    MessageT* msg;
-    message_t__init(msg);
-    MessageT* ret;
-
-    if(msg == NULL){
+    MessageT* msg = malloc(sizeof(MessageT));
+    if (msg == NULL) {
         printf("Error allocating memory for message\n");
         return NULL;
     }
+    message_t__init(msg);
+
+    MessageT* ret = malloc(sizeof(MessageT));
+    if (ret == NULL) {
+        printf("Error allocating memory for message\n");
+        return NULL;
+    }
+    message_t__init(ret);
+
     msg->opcode = MESSAGE_T__OPCODE__OP_GETKEYS;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
     if((ret = network_send_receive(rtable, msg)) == NULL){
         printf("Error sending message\n");
-        free(msg);
-        free(ret);
+        // message_t__free_unpacked(msg, NULL);
+        // message_t__free_unpacked(ret, NULL);
         return NULL;
     }
-    char** keys[ret->n_keys + 1];
+    char** keys = ret->keys;
     keys[ret->n_keys] = NULL;
 
-    free(msg);
-    free(ret);
+
+
+    // message_t__free_unpacked(msg, NULL);
+    // message_t__free_unpacked(ret, NULL);
     return keys;
 }
 
@@ -259,35 +299,51 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
     if(rtable == NULL)
         return NULL;
     
-    MessageT* msg;
-    message_t__init(msg);
-    MessageT* ret;
-
-    if(msg == NULL){
+    MessageT* msg = malloc(sizeof(MessageT));
+    if (msg == NULL) {
         printf("Error allocating memory for message\n");
         return NULL;
     }
+    message_t__init(msg);
+
+    MessageT* ret = malloc(sizeof(MessageT));
+    if (ret == NULL) {
+        printf("Error allocating memory for message\n");
+        return NULL;
+    }
+    message_t__init(ret);
+
     msg->opcode = MESSAGE_T__OPCODE__OP_GETTABLE;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
     if((ret = network_send_receive(rtable, msg)) == NULL){
         printf("Error sending message\n");
-        free(msg);
-        free(ret);
+        // message_t__free_unpacked(msg, NULL);
         return NULL;
     }
     struct entry_t** entries = malloc(sizeof(struct entry_t*) * ret->n_entries + 1);
     if(entries == NULL){
         printf("Error allocating memory for entries\n");
-        free(msg);
-        free(ret);
+        // message_t__free_unpacked(msg, NULL);
+        // message_t__free_unpacked(ret, NULL);
         return NULL;
+    }
+    EntryT** entriesT = ret->entries;
+
+    for(int i = 0; i < ret->n_entries; i++){
+        EntryT* e = entriesT[i];
+
+        struct data_t* data = data_create(e->value.len,e->value.data);
+
+        struct entry_t* entry = entry_create(e->key, data);
+
+        entries[i] = entry;
     }
 
     entries[ret->n_entries] = NULL;
 
-    free(msg);
-    free(ret);
+    // message_t__free_unpacked(msg, NULL);
+    // message_t__free_unpacked(ret, NULL);
     return entries;
 }
 
@@ -299,7 +355,6 @@ void rtable_free_entries(struct entry_t **entries){
     for (int i = 0; entries[i] != NULL; i++){
         struct entry_t* e = entries[i];
         entry_destroy(e);
-        free(e);
     }
     
     free(entries);
