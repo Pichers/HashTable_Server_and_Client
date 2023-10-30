@@ -6,6 +6,7 @@
 
 #include "table.h"
 #include "sdmessage.pb-c.h"
+#include "network_server.h"
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.
@@ -132,7 +133,7 @@ MessageT *network_receive(int client_socket){
         return NULL;
     }
 
-    if (read(client_socket, buffer, sizeof(MessageT)) < 0){
+    if (read(client_socket, buffer, response_size) < 0) {
         perror("Erro ao receber mensagem");
         free(buffer);
         return NULL;

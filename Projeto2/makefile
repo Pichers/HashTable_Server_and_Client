@@ -2,7 +2,7 @@ BIN_DIR = bin
 INC_DIR = include
 OBJ_DIR = obj
 SRC_DIR = src
-DEP_DIR = dependenciess
+DEP_DIR = dependencies
 
 
 
@@ -20,7 +20,7 @@ $(BIN_DIR)/table_server: $(OBJ_DIR)/table_server.o $(OBJ_DIR)/table_skel.o $(OBJ
 	$(CC) $^ -o $@ -lprotobuf-c 
 
 
-$(BIN_DIR)/table_client: $(OBJ_DIR)/table_client.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/client_stub.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o  $(OBJ_DIR)/network_client.o $(OBJ_DIR)/sdmessage.pb-c.o
+$(BIN_DIR)/table_client: $(OBJ_DIR)/table_client.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/client_stub.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/table.o $(OBJ_DIR)/list.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/sdmessage.pb-c.o
 	$(CC) $^ -o $@ -lprotobuf-c  
 
 
