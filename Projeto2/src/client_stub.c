@@ -1,6 +1,8 @@
-#include "data.h"
-#include "entry.h"
-#include "client_stub-private.h"
+#include "../include/data.h"
+#include "../include/entry.h"
+#include "../include/client_stub-private.h"
+#include "../sdmessage.pb-c.h"
+#include "../include/network_client.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,18 +17,39 @@ struct rtable_t;
  * em que address_port é uma string no formato <hostname>:<port>.
  * Retorna a estrutura rtable preenchida, ou NULL em caso de erro.
  */
-struct rtable_t *rtable_connect(char *address_port){
-    if(address_port == NULL)
+struct rtable_t *rtable_connect(char *address_port) {
+    if (address_port == NULL)
         return NULL;
+
+    char *hostname = NULL;
+    char *port_str = NULL;
+
+    // Use strtok to split the string at the ':'
+    char *token = strtok(address_port, ":");
     
-    struct rtable_t* rtable = malloc(sizeof(struct rtable_t));
-    if(rtable == NULL){
-        free(rtable);
+    if (token != NULL) {
+        hostname = strdup(token); // Duplicate the hostname
+        token = strtok(NULL, ":");
+        if (token != NULL) {
+            port_str = token;
+        } else {
+            free(hostname); // Free the hostname if port is missing
+            return NULL;
+        }
+    } else {
         return NULL;
     }
-    
-    rtable->server_port = address_port;
-    
+
+    // Create and initialize the rtable structure
+    struct rtable_t *rtable = (struct rtable_t *)malloc(sizeof(struct rtable_t));
+    if (rtable == NULL) {
+        free(hostname);
+        return NULL;
+    }
+
+    rtable->server_address = hostname;
+    rtable->server_port = atoi(port_str);
+
     return rtable;
 }
 /* Termina a associação entre o cliente e o servidor, fechando a 
@@ -36,7 +59,15 @@ struct rtable_t *rtable_connect(char *address_port){
 int rtable_disconnect(struct rtable_t *rtable){
     if(rtable == NULL)
         return -1;
+    if(rtable->sockfd < 0){
+        return -1;
+    }
+    if(close(rtable->sockfd) == -1){
+        printf("Error closing socket in rtable\n");
+        return -1;
+    }
     
+    free(rtable->server_address);
     free(rtable);
     return 0;
 }
@@ -49,13 +80,64 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
     if(rtable == NULL || entry == NULL)
         return -1;
     
+    MessageT* msg = malloc(sizeof(MessageT));
+
+    if(msg == NULL){
+        printf("Error allocating memory for message\n");
+        return -1;
+    }
+    msg->opcode = MESSAGE_T__OPCODE__OP_PUT;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_ENTRY;
+
+    msg->entry = entry;
+
+    if(network_send_receive(rtable, msg) == NULL){
+        printf("Error sending message\n");
+        free(msg);
+        return -1;
+    }
+    free(msg);
+
     return 0;
 }
 
 /* Retorna o elemento da tabela com chave key, ou NULL caso não exista
  * ou se ocorrer algum erro.
  */
-struct data_t *rtable_get(struct rtable_t *rtable, char *key);
+struct data_t *rtable_get(struct rtable_t *rtable, char *key){
+    if(rtable==NULL || key ==NULL)
+        return NULL;
+    
+    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* ret;
+
+    if(msg == NULL){
+        printf("Error allocating memory for message\n");
+        return NULL;
+    }
+    msg->opcode = MESSAGE_T__OPCODE__OP_GET;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_KEY;
+
+    msg->key = key;
+    
+    if(ret = network_send_receive(rtable, msg) == NULL){
+        printf("Error sending message\n");
+        free(msg);
+        return NULL;
+    }
+
+    struct data_t* data = data_create(ret->value.len,ret->value.data);
+    if(data == NULL){
+        printf("Error creating data\n");
+        free(msg);
+        free(ret);
+        return NULL;
+    }
+
+    free(msg);
+    free(ret);
+    return data;
+}
 
 /* Função para remover um elemento da tabela. Vai libertar 
  * toda a memoria alocada na respetiva operação rtable_put().
@@ -64,6 +146,24 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key);
 int rtable_del(struct rtable_t *rtable, char *key){
     if(rtable == NULL || key == NULL)
         return -1;
+
+    MessageT* msg = malloc(sizeof(MessageT));
+
+    if(msg == NULL){
+        printf("Error allocating memory for message\n");
+        return -1;
+    }
+    msg->opcode = MESSAGE_T__OPCODE__OP_DEL;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_KEY;
+
+    msg->key = key;
+    if(network_send_receive(rtable, msg) == NULL){
+        printf("Error sending message\n");
+        free(msg);
+        return -1;
+    }
+
+    free(msg);
     
     return 0;
 }
@@ -73,8 +173,25 @@ int rtable_del(struct rtable_t *rtable, char *key){
 int rtable_size(struct rtable_t *rtable){
     if(rtable == NULL)
         return -1;
-    
-    return 0;
+
+    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* ret;
+
+    if(msg == NULL){
+        printf("Error allocating memory for message\n");
+        return -1;
+    }
+    msg->opcode = MESSAGE_T__OPCODE__OP_SIZE;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
+
+    if(ret = network_send_receive(rtable, msg) == NULL){
+        printf("Error sending message\n");
+        free(msg);
+        free(ret);
+        return -1;
+    }
+    free(msg);
+    return ret->result;
 }
 
 /* Retorna um array de char* com a cópia de todas as keys da tabela,
@@ -84,8 +201,29 @@ int rtable_size(struct rtable_t *rtable){
 char **rtable_get_keys(struct rtable_t *rtable){
     if(rtable == NULL)
         return NULL;
-    
-    return NULL;
+
+    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* ret;
+
+    if(msg == NULL){
+        printf("Error allocating memory for message\n");
+        return -1;
+    }
+    msg->opcode = MESSAGE_T__OPCODE__OP_GETKEYS;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
+
+    if(ret = network_send_receive(rtable, msg) == NULL){
+        printf("Error sending message\n");
+        free(msg);
+        free(ret);
+        return NULL;
+    }
+    char** keys [ret->n_keys + 1]
+    keys[ret->n_keys] = NULL;
+
+    free(msg);
+    free(ret);
+    return keys;
 }
 
 /* Liberta a memória alocada por rtable_get_keys().
@@ -93,8 +231,11 @@ char **rtable_get_keys(struct rtable_t *rtable){
 void rtable_free_keys(char **keys){
     if(keys == NULL)
         return;
-    
+    for (int i = 0; i < keys[i] != NULL; i++){
+        free(keys[i]);
+    }
     free(keys);
+    return;
 }
 
 /* Retorna um array de entry_t* com todo o conteúdo da tabela, colocando
@@ -104,7 +245,35 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
     if(rtable == NULL)
         return NULL;
     
-    return NULL;
+    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* ret;
+
+    if(msg == NULL){
+        printf("Error allocating memory for message\n");
+        return NULL;
+    }
+    msg->opcode = MESSAGE_T__OPCODE__OP_GETTABLE;
+    msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
+
+    if(ret = network_send_receive(rtable, msg) == NULL){
+        printf("Error sending message\n");
+        free(msg);
+        free(ret);
+        return NULL;
+    }
+    struct entry_t** entries = malloc(sizeof(struct entry_t*) * ret->n_entries + 1);
+    if(entries == NULL){
+        printf("Error allocating memory for entries\n");
+        free(msg);
+        free(ret);
+        return NULL;
+    }
+
+    entries[ret->n_entries] = NULL;
+
+    free(msg);
+    free(ret);
+    return entries;
 }
 
 /* Liberta a memória alocada por rtable_get_table().
@@ -112,6 +281,12 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
 void rtable_free_entries(struct entry_t **entries){
     if(entries == NULL)
         return;
+    for (int i = 0; entries[i] != NULL; i++){
+        struct entry_t* e = entries[i];
+        entry_destroy(e);
+        free(e);
+    }
     
     free(entries);
+    return;
 }

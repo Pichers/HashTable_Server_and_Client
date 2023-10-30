@@ -115,6 +115,14 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
         free(bufW);
         return NULL;
     }
+    if(msg_resposta->opcode == MESSAGE_T__OPCODE__OP_BAD || 
+        msg_resposta->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+            perror("Erro ao receber mensagem");
+            free(buf);
+            free(msg_resposta);
+            return NULL; 
+    }
+    free(buf);
 
     int response_size = ntohs(response_size_short);
 
@@ -155,6 +163,10 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
 int network_close(struct rtable_t *rtable){
     if(rtable == NULL)
         return -1;
+    char** keys = rtable_get_keys(rtable);
+
+    rtable_free_entries(rtable_get_table);
+    rtable_free_keys(keys);
     
     close(rtable->sockfd);
     return 0;
