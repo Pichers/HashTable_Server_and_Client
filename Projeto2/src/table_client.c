@@ -47,10 +47,12 @@ int main(int argc, char *argv[]) {
             char *key = strtok(NULL, " \n");
             char *data = strtok(NULL, "\n");
 
+            struct data_t* datat = data_create(strlen(data), data);
+
             if (key == NULL || data == NULL) {
                 printf("Comando put requer <key> e <data>\n");
             } else {
-                struct entry_t* entry = entry_create(key, data);
+                struct entry_t* entry = entry_create(key, datat);
 
                 int a = rtable_put(rtable, entry);
                 if(a == -1)
@@ -144,8 +146,7 @@ int main(int argc, char *argv[]) {
                 }
                 //free(entries);
             }
-            
-            struct entry_t** entries = rtable_get_table(rtable);
+        
             if(entries == NULL){
                 printf("Erro ao obter tabela\n");
             }
