@@ -50,7 +50,7 @@ struct rtable_t *rtable_connect(char *address_port) {
     rtable->server_address = hostname;
     rtable->server_port = atoi(port_str);
 
-    int i = network_connect(rtable->server_address, rtable->server_port);
+    int i = network_connect(rtable);
     if (i == -1){
         perror("Error network connecting");
         return NULL;

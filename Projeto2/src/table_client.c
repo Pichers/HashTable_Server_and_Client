@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
                 }
                 //free(entries);
             }
-        
+            
             if(entries == NULL){
                 printf("Erro ao obter tabela\n");
             }
