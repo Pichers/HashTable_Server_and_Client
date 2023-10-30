@@ -99,7 +99,7 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
             key = msg->key;
-            struct entry_t* entry = table_get(table, key);
+            struct entry_t* entry = (struct entry_t*)table_get(table, key);
 
             if(entry_destroy(entry) == -1){
                 return handleError(msg);
@@ -189,7 +189,8 @@ int invoke(MessageT *msg, struct table_t *table){
             }
 
             msg->n_entries = nKeys;
-            msg->entries = entries;
+            EntryT** msg_entries = (EntryT**)entries;
+            msg->entries = msg_entries;
 
             break;
         default: // Case BAD || ERROR

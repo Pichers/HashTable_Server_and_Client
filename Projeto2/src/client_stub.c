@@ -73,7 +73,7 @@ int rtable_disconnect(struct rtable_t *rtable){
         printf("a");
         return -1;
     }
-    if(close(rtable->sockfd) == -1){
+    if(network_close(rtable) == -1){
         printf("Error closing socket in rtable\n");
         return -1;
     }
