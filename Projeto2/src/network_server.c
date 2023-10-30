@@ -77,14 +77,15 @@ int network_main_loop(int listening_socket, struct table_t *table){
     while ((client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client)) != -1) {
         
         msg = network_receive(client_socket);
+        printf("%d", (int)msg->opcode);
 
+        fflush(stdout);
         if(msg == NULL){
             perror("Erro ao de-serializar mensagem");
             close(client_socket);
             close(listening_socket);
             return -1;
         }
-
         int response = invoke(msg, table);
 
         if(response == -1){
@@ -93,16 +94,14 @@ int network_main_loop(int listening_socket, struct table_t *table){
             close(client_socket);
             return -1;
         }
-
         if(network_send(client_socket, msg) == -1){
             perror("Erro ao enviar mensagem");
             close(listening_socket);
             close(client_socket);
             return -1;
         }
-
-        close(client_socket);
     }
+    close(client_socket);
     close(listening_socket);
     return -1;
 }
@@ -159,12 +158,16 @@ int network_send(int client_socket, MessageT *msg){
     if(msg == NULL)
         return -1;
 
-    short msg_size = message_t__get_packed_size(msg);
+
+    int msg_size = message_t__get_packed_size(msg);
+    short msg_size_short = msg_size;
+    short msg_size_network = htons(msg_size_short);
+
     char *buffer = malloc(sizeof(char) * msg_size);
     message_t__pack(msg, (uint8_t*)buffer);
 
 
-    if (write(client_socket,buffer, sizeof(short)) < 0) {
+    if (write(client_socket,&msg_size_network, sizeof(short)) < 0) {
         perror("Error sending message size");
         free(buffer);
         return -1;

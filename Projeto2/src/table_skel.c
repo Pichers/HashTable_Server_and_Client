@@ -1,6 +1,8 @@
 #include <stddef.h> 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "table_skel.h"
 #include "entry.h"
@@ -61,13 +63,15 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-            char* key = msg->key;
-
-            struct data_t* data = data_create(msg->value.len, msg->value.data);
+            char* key = strdup(msg->key);
+            printf("key: %s\n", key);
+            printf("value: %s\n", msg->value.data);
+            printf("value len: %d\n", msg->value.len);
+            fflush(stdout);
+            struct data_t* data = data_create(msg->value.len, (char*) strdup(msg->value.data));
 
             int i = table_put(table, key, data);
             free(msg->key);
-            msg->key = NULL;
 
             if(i == -1){
                 return handleError(msg);
