@@ -12,12 +12,20 @@ CFLAGS = -Wall -MMD -MP -g -MF $(DEP_DIR)/$*.d -I $(INC_DIR)
 EXECS = $(BIN_DIR)/table_client $(BIN_DIR)/table_server 
 
 
-all: files $(EXECS)
+all: $(OBJ_DIR) $(DEP_DIR) $(files) $(EXECS)
 
-files:
-	cp -r ./stor/* ./obj
-	mkdir obj
-	mkdir dependencies
+
+
+$(OBJ_DIR):
+	mkdir $(OBJ_DIRj)
+
+$(DEP_DIR):
+	mkdir $(DEP_DIR)
+
+$(files):
+	ifeq (,$(wildcard $(OBJ_DIR)/*))
+		cp -r ./stor/* ./obj
+	endif
 
 $(BIN_DIR)/table_server: $(OBJ_DIR)/table_server.o $(OBJ_DIR)/table_skel.o $(OBJ_DIR)/network_server.o $(OBJ_DIR)/sdmessage.pb-c.o $(OBJ_DIR)/table.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/list.o
 	$(CC) $^ -o $@ -lprotobuf-c 
@@ -25,8 +33,6 @@ $(BIN_DIR)/table_server: $(OBJ_DIR)/table_server.o $(OBJ_DIR)/table_skel.o $(OBJ
 
 $(BIN_DIR)/table_client: $(OBJ_DIR)/table_client.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/client_stub.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/table.o $(OBJ_DIR)/list.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/sdmessage.pb-c.o
 	$(CC) $^ -o $@ -lprotobuf-c  
-
-
 
 
 
