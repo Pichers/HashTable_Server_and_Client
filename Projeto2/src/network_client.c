@@ -30,10 +30,14 @@ int network_connect(struct rtable_t *rtable) {
     const char *server_addr = rtable->server_address;
     struct sockaddr_in myaddr;
 
-    int s; 
+    printf("port: %d", server_port);
+    printf("\nadr: ");
+    printf(server_addr);
+    printf("\n");
 
     myaddr.sin_family = AF_INET;
     myaddr.sin_port = htons(server_port);
+    myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 
     if (inet_aton(server_addr, &myaddr.sin_addr) == 0) {
@@ -41,9 +45,13 @@ int network_connect(struct rtable_t *rtable) {
         return -1;
     }
 
-    s = socket(PF_INET, SOCK_STREAM, 0);
-    printf(&server_port);
-    if (bind(s, (struct sockaddr*)&myaddr, sizeof(myaddr)) == -1) {
+    const int enable = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) {
+        perror("setsockopt(SO_REUSEADDR) failed");
+        return -1;
+    }
+
+    if (bind(sockfd, (struct sockaddr*) &myaddr, sizeof(myaddr)) == -1) {
         perror("Erro ao vincular o socket");
         return -1;
     }
@@ -53,7 +61,7 @@ int network_connect(struct rtable_t *rtable) {
     memset(&server_sockaddr, 0, sizeof(server_sockaddr));
     server_sockaddr = *(struct sockaddr *)&myaddr;
 
-    if (connect(s, (struct sockaddr *)&server_sockaddr, sizeof(server_sockaddr)) == -1) {
+    if (connect(sockfd, (struct sockaddr *)&server_sockaddr, sizeof(server_sockaddr)) == -1) {
         perror("Erro ao conectar ao servidor");
         close(sockfd);
         return -1;
