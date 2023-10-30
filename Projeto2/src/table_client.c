@@ -74,17 +74,9 @@ int main(int argc, char *argv[]) {
                     printf("Elemento nao encontrado, ou erro ao obte-lo\n");
                 }
                 else{
-                    printf("Elemento encontrado: %s\n", data->data);
+                    printf("Elemento encontrado: %s\n",(char*) data->data);
                 }
-                entry_destroy(data);
-                struct entry_t* entry = rtable_get(rtable, key);
-                if (entry == NULL) {
-                    printf("Elemento nao encontrado, ou erro ao obte-lo\n");
-                }
-                else{
-                    printf("Elemento encontrado: %s\n", entry->value->data);
-                }
-                entry_destroy(entry);
+                data_destroy(data);
             }
         } else if (strcmp(token, "del") == 0) {
             // Processar comando del
@@ -141,7 +133,7 @@ int main(int argc, char *argv[]) {
             else{
                 printf("Tabela: ");
                 for (int i = 0; entries[i] != NULL; i++){
-                    printf("%s :: %s", entries[i]->key, entries[i]->value->data);
+                    printf("%s :: %s", entries[i]->key,(char*) entries[i]->value->data);
                     entry_destroy(entries[i]);
                 }
                 //free(entries);
@@ -153,12 +145,12 @@ int main(int argc, char *argv[]) {
             else{
                 printf("Tabela: ");
                 for (int i = 0; entries[i] != NULL; i++){
-                    printf("%s ", entries[i]->value->data);
+                    printf("%s ",(char*) entries[i]->value->data);
                 }
             }
         } else if (strcmp(token, "quit") == 0) {
             // Encerra o programa cliente
-            rtable_free_entries(rtable_get_table);
+            rtable_free_entries(rtable_get_table(rtable));
 
             if(rtable_disconnect(rtable) == -1){
                 printf("Erro ao desconectar do servidor\n");

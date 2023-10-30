@@ -126,8 +126,10 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key){
     msg->c_type = MESSAGE_T__C_TYPE__CT_KEY;
 
     msg->key = key;
+
+    ret = network_send_receive(rtable, msg);
     
-    if(ret = network_send_receive(rtable, msg) == NULL){
+    if(ret == NULL){
         printf("Error sending message\n");
         free(msg);
         return NULL;
@@ -191,7 +193,7 @@ int rtable_size(struct rtable_t *rtable){
     msg->opcode = MESSAGE_T__OPCODE__OP_SIZE;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    if(ret = network_send_receive(rtable, msg) == NULL){
+    if((ret = network_send_receive(rtable, msg)) == NULL){
         printf("Error sending message\n");
         free(msg);
         free(ret);
@@ -214,18 +216,18 @@ char **rtable_get_keys(struct rtable_t *rtable){
 
     if(msg == NULL){
         printf("Error allocating memory for message\n");
-        return -1;
+        return NULL;
     }
     msg->opcode = MESSAGE_T__OPCODE__OP_GETKEYS;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    if(ret = network_send_receive(rtable, msg) == NULL){
+    if((ret = network_send_receive(rtable, msg)) == NULL){
         printf("Error sending message\n");
         free(msg);
         free(ret);
         return NULL;
     }
-    char** keys [ret->n_keys + 1];
+    char** keys[ret->n_keys + 1];
     keys[ret->n_keys] = NULL;
 
     free(msg);
@@ -238,7 +240,7 @@ char **rtable_get_keys(struct rtable_t *rtable){
 void rtable_free_keys(char **keys){
     if(keys == NULL)
         return;
-    for (int i = 0; i < keys[i] != NULL; i++){
+    for (int i = 0; keys[i] != NULL; i++){
         free(keys[i]);
     }
     free(keys);
@@ -262,7 +264,7 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
     msg->opcode = MESSAGE_T__OPCODE__OP_GETTABLE;
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-    if(ret = network_send_receive(rtable, msg) == NULL){
+    if((ret = network_send_receive(rtable, msg)) == NULL){
         printf("Error sending message\n");
         free(msg);
         free(ret);

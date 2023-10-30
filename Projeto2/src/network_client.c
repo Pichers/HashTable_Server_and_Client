@@ -33,7 +33,7 @@ int network_connect(struct rtable_t *rtable) {
 
     myaddr.sin_family = AF_INET;
     myaddr.sin_port = htons(server_port);
-    myaddr.sin_addr.s_addr = INADDR_ANY;
+    myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     myaddr.sin_addr.s_addr = INADDR_ANY;
 
