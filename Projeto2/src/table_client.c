@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
             else{
                 printf("Tabela: ");
                 for (int i = 0; entries[i] != NULL; i++){
-                    printf("%s ", entries[i]->key->data);
+                    printf("%s ", entries[i]->value->data);
                 }
             }
         } else if (strcmp(token, "quit") == 0) {

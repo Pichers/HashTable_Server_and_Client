@@ -88,8 +88,6 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
         return NULL;
     }
 
-
-
     //send msg
     void *bufW = malloc(msg_size);
     if (bufW == NULL) {
