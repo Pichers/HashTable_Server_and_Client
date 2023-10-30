@@ -146,7 +146,6 @@ int main(int argc, char *argv[]) {
                 printf("Tabela: \n");
                 for (int i = 0; entries[i] != NULL; i++){
                     printf("%s :: %s \n", entries[i]->key,(char*) entries[i]->value->data);
-                    entry_destroy(entries[i]);
                 }
                 rtable_free_entries(entries);
             }
