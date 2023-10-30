@@ -7,9 +7,9 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#include "../include/client_stub.h"
-#include "../include/client_stub-private.h"
-#include "../sdmessage.pb-c.h"
+#include "client_stub.h"
+#include "client_stub-private.h"
+#include "sdmessage.pb-c.h"
 
 /* Esta função deve:
  * - Obter o endereço do servidor (struct sockaddr_in) com base na

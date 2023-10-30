@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/client_stub.h"
+#include "client_stub.h"
 
 
 void help() {

@@ -1,8 +1,8 @@
-#include "../include/data.h"
-#include "../include/entry.h"
-#include "../include/client_stub-private.h"
-#include "../sdmessage.pb-c.h"
-#include "../include/network_client.h"
+#include "data.h"
+#include "entry.h"
+#include "client_stub-private.h"
+#include "sdmessage.pb-c.h"
+#include "network_client.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +46,7 @@ struct rtable_t *rtable_connect(char *address_port) {
         free(hostname);
         return NULL;
     }
-
+    
     rtable->server_address = hostname;
     rtable->server_port = atoi(port_str);
 
