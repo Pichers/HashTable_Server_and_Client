@@ -53,7 +53,7 @@ int invoke(MessageT *msg, struct table_t *table){
         return handleError(msg);
     }
 
-    struct MessageT__Opcode* opCode = msg->opcode;
+    MessageT__Opcode opCode = msg->opcode;
 
     switch((int) opCode) {
         case (int) MESSAGE_T__OPCODE__OP_PUT:
@@ -79,7 +79,7 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_VALUE;
 
-            char* key = msg->key;
+            key = msg->key;
 
             struct data_t* dataValue = table_get(table, key);
 
@@ -98,7 +98,7 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
-            char* key = msg->key;
+            key = msg->key;
             struct entry_t* entry = table_get(table, key);
 
             if(entry_destroy(entry) == -1){
@@ -150,7 +150,7 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
-            char** keys = table_get_keys(table);
+            keys = table_get_keys(table);
             
             if(keys == NULL){
                 return handleError(msg);

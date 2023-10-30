@@ -6,6 +6,7 @@
 
 #include "table.h"
 #include "sdmessage.pb-c.h"
+#include "network_server.h"
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.
@@ -111,28 +112,34 @@ int network_main_loop(int listening_socket, struct table_t *table){
  */
 MessageT *network_receive(int client_socket){
 
-    char *buffer = malloc(sizeof(char) * 1024);
-    int bytes_read = 0;
-    int total_bytes_read = 0;
 
-    MessageT* msg;
+    short response_size_short;
 
-     
-    if(client_socket == -1)
+    if(read(client_socket, &response_size_short, sizeof(short)) == -1){
+        perror("Erro ao ler tamanho da mensagem");
         return NULL;
-
-    while((bytes_read = read(client_socket, buffer + total_bytes_read, 1024)) > 0){
-        total_bytes_read += bytes_read;
-        buffer = realloc(buffer, sizeof(char) * (total_bytes_read + 1024));
     }
 
-    if(bytes_read == -1){
-        perror("Erro ao ler mensagem");
+    int response_size = ntohs(response_size_short);
+    if (response_size <= 0) {
+        perror("Invalid response size");
+        return NULL;
+    }
+
+
+    char *buffer = malloc(sizeof(char) * response_size);
+    if(buffer == NULL){
+        perror("Erro ao alocar memória para mensagem");
+        return NULL;
+    }
+
+    if (read(client_socket, buffer, response_size) < 0) {
+        perror("Erro ao receber mensagem");
         free(buffer);
         return NULL;
     }
 
-    msg = message_t__unpack(NULL, total_bytes_read, buffer);
+    MessageT* msg = message_t__unpack(NULL, response_size, buffer);
     free(buffer);
     return msg;
 }
@@ -148,14 +155,25 @@ int network_send(int client_socket, MessageT *msg){
     if(msg == NULL)
         return -1;
 
-    int msg_size = message_t__get_packed_size(msg);
+    short msg_size = message_t__get_packed_size(msg);
     char *buffer = malloc(sizeof(char) * msg_size);
     message_t__pack(msg, buffer);
 
-    if(write(client_socket, buffer, msg_size) == -1){
+
+    if (write(client_socket,buffer, sizeof(short)) < 0) {
+        perror("Error sending message size");
+        free(buffer);
+        return NULL;
+    }
+    if (buffer == NULL) {
+        perror("??wtf??");
+        return NULL;
+    }
+
+    if (write(client_socket, buffer, msg_size) < 0){
         perror("Erro ao enviar mensagem");
         free(buffer);
-        return -1;
+        return NULL;
     }
 
     free(buffer);

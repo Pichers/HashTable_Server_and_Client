@@ -2,7 +2,7 @@
 #define _NETWORK_SERVER_H
 
 #include "table.h"
-#include "../sdmessage.pb-c.h"
+#include "sdmessage.pb-c.h"
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.
