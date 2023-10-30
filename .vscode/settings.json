@@ -1,6 +1,8 @@
 {
-    "files.associations": {
-        "stdio.h": "c",
-        "client_stub.h": "c"
+        "files.associations": {
+            "stdio.h": "c",
+            "table_skel.h": "c",
+            "stdlib.h": "c",
+            "string.h": "c"
+        }
     }
-}

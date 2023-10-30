@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/table_skel.h"
-#include "../include/network_server.h"
+#include "table_skel.h"
+#include "network_server.h"
 
 int main(int argc, char const *argv[]){
     if (argc != 3) {
