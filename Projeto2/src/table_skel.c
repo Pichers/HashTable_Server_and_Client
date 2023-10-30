@@ -28,9 +28,7 @@ struct table_t *table_skel_init(int n_lists){
  */
 int table_skel_destroy(struct table_t *table){
 
-    int i = table_destroy(table);
-
-    return i;
+    return table_destroy(table);
 }
 
 int handleError(MessageT* msg){
