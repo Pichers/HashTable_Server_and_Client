@@ -145,7 +145,6 @@ int main(int argc, char *argv[]) {
                 //free(entries);
             }
             
-            struct entry_t** entries = rtable_get_table(rtable);
             if(entries == NULL){
                 printf("Erro ao obter tabela\n");
             }
