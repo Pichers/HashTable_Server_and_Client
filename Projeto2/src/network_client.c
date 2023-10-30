@@ -42,6 +42,7 @@ int network_connect(struct rtable_t *rtable) {
     }
 
     s = socket(PF_INET, SOCK_STREAM, 0);
+    printf(&server_port);
     if (bind(s, (struct sockaddr*)&myaddr, sizeof(myaddr)) == -1) {
         perror("Erro ao vincular o socket");
         return -1;
