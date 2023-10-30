@@ -30,30 +30,23 @@ int network_connect(struct rtable_t *rtable) {
     const char *server_addr = rtable->server_address;
     struct sockaddr_in myaddr;
 
-    int s; 
 
     myaddr.sin_family = AF_INET;
     myaddr.sin_port = htons(server_port);
+    myaddr.sin_addr.s_addr = INADDR_ANY;
 
+    myaddr.sin_addr.s_addr = INADDR_ANY;
 
     if (inet_aton(server_addr, &myaddr.sin_addr) == 0) {
         perror("Erro ao converter endereço IP");
         return -1;
     }
 
-    s = socket(PF_INET, SOCK_STREAM, 0);
-    printf(&server_port);
-    if (bind(s, (struct sockaddr*)&myaddr, sizeof(myaddr)) == -1) {
-        perror("Erro ao vincular o socket");
-        return -1;
-    }
-
-
     struct sockaddr server_sockaddr;
     memset(&server_sockaddr, 0, sizeof(server_sockaddr));
     server_sockaddr = *(struct sockaddr *)&myaddr;
 
-    if (connect(s, (struct sockaddr *)&server_sockaddr, sizeof(server_sockaddr)) == -1) {
+    if (connect(sockfd, (struct sockaddr *)&server_sockaddr, sizeof(server_sockaddr)) == -1) {
         perror("Erro ao conectar ao servidor");
         close(sockfd);
         return -1;
