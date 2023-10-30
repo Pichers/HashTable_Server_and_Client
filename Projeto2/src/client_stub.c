@@ -56,7 +56,7 @@ struct rtable_t *rtable_connect(char *address_port) {
         return NULL;
     }
     
-
+    printf("Connected to server\n");
     return rtable;
 }
 /* Termina a associação entre o cliente e o servidor, fechando a 
@@ -87,7 +87,8 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
     if(rtable == NULL || entry == NULL)
         return -1;
     
-    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* msg;
+    message_t__init(msg);
 
     if(msg == NULL){
         printf("Error allocating memory for message\n");
@@ -115,7 +116,8 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key){
     if(rtable==NULL || key ==NULL)
         return NULL;
     
-    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* msg;
+    message_t__init(msg);
     MessageT* ret;
 
     if(msg == NULL){
@@ -156,7 +158,8 @@ int rtable_del(struct rtable_t *rtable, char *key){
     if(rtable == NULL || key == NULL)
         return -1;
 
-    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* msg;
+    message_t__init(msg);
 
     if(msg == NULL){
         printf("Error allocating memory for message\n");
@@ -183,7 +186,8 @@ int rtable_size(struct rtable_t *rtable){
     if(rtable == NULL)
         return -1;
 
-    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* msg;
+    message_t__init(msg);
     MessageT* ret;
 
     if(msg == NULL){
@@ -211,7 +215,8 @@ char **rtable_get_keys(struct rtable_t *rtable){
     if(rtable == NULL)
         return NULL;
 
-    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* msg;
+    message_t__init(msg);
     MessageT* ret;
 
     if(msg == NULL){
@@ -254,7 +259,8 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
     if(rtable == NULL)
         return NULL;
     
-    MessageT* msg = malloc(sizeof(MessageT));
+    MessageT* msg;
+    message_t__init(msg);
     MessageT* ret;
 
     if(msg == NULL){
