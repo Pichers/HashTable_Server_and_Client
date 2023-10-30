@@ -218,7 +218,7 @@ char **rtable_get_keys(struct rtable_t *rtable){
         free(ret);
         return NULL;
     }
-    char** keys [ret->n_keys + 1]
+    char** keys [ret->n_keys + 1];
     keys[ret->n_keys] = NULL;
 
     free(msg);

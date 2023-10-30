@@ -151,6 +151,8 @@ int network_close(struct rtable_t *rtable){
     if(rtable == NULL)
         return -1;
     
-    close(rtable->sockfd);
-    return 0;
+    if (rtable_disconnect(rtable) == 0) {
+        return 0;
+    }
+    return 1;
 }
