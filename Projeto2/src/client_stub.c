@@ -167,12 +167,12 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key){
     struct data_t* data = data_create(ret->value.len,ret->value.data);
     if(data == NULL){
         printf("Error creating data\n");
-        // message_t__free_unpacked(msg, NULL);
-        // message_t__free_unpacked(ret, NULL);
+        message_t__free_unpacked(msg, NULL);
+        message_t__free_unpacked(ret, NULL);
         return NULL;
     }
-    // message_t__free_unpacked(msg, NULL);
-    // message_t__free_unpacked(ret, NULL);
+    message_t__free_unpacked(msg, NULL);
+    message_t__free_unpacked(ret, NULL);
     return data;
 }
 
@@ -197,11 +197,11 @@ int rtable_del(struct rtable_t *rtable, char *key){
     msg->key = key;
     if(network_send_receive(rtable, msg) == NULL){
         printf("Error sending message\n");
-        // message_t__free_unpacked(msg, NULL);
+        message_t__free_unpacked(msg, NULL);
         return -1;
     }
 
-    // message_t__free_unpacked(msg, NULL);
+    message_t__free_unpacked(msg, NULL);
     
     return 0;
 }
@@ -231,11 +231,11 @@ int rtable_size(struct rtable_t *rtable){
 
     if((ret = network_send_receive(rtable, msg)) == NULL){
         printf("Error sending message\n");
-        // message_t__free_unpacked(msg, NULL);
+        message_t__free_unpacked(msg, NULL);
         return -1;
     }    
-    // message_t__free_unpacked(msg, NULL);
-    // message_t__free_unpacked(ret, NULL);
+    message_t__free_unpacked(msg, NULL);
+    message_t__free_unpacked(ret, NULL);
     return ret->result;
 }
 
@@ -266,17 +266,14 @@ char **rtable_get_keys(struct rtable_t *rtable){
 
     if((ret = network_send_receive(rtable, msg)) == NULL){
         printf("Error sending message\n");
-        // message_t__free_unpacked(msg, NULL);
-        // message_t__free_unpacked(ret, NULL);
+        message_t__free_unpacked(msg, NULL);
         return NULL;
     }
     char** keys = ret->keys;
     keys[ret->n_keys] = NULL;
 
-
-
-    // message_t__free_unpacked(msg, NULL);
-    // message_t__free_unpacked(ret, NULL);
+    message_t__free_unpacked(msg, NULL);
+    message_t__free_unpacked(ret, NULL);
     return keys;
 }
 
