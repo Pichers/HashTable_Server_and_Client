@@ -77,8 +77,15 @@ int network_main_loop(int listening_socket, struct table_t *table){
     while ((client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client)) != -1) {
         
         msg = network_receive(client_socket);
-        printf("%d", (int)msg->opcode);
-
+        printf("%d\n", (int)msg->opcode);
+        printf("%d\n", (int)msg->c_type);
+        printf("%s\n", msg->key);
+        printf("%s\n", msg->value.data);
+        printf("%d\n", msg->value.len);
+        printf("%d\n", msg->n_keys);
+        printf("%d\n", msg->n_entries);
+        printf("%d\n", msg->result);
+        printf("done\n");
         fflush(stdout);
         if(msg == NULL){
             perror("Erro ao de-serializar mensagem");
@@ -100,8 +107,9 @@ int network_main_loop(int listening_socket, struct table_t *table){
             close(client_socket);
             return -1;
         }
+        close(client_socket);
     }
-    close(client_socket);
+
     close(listening_socket);
     return -1;
 }
@@ -113,37 +121,31 @@ int network_main_loop(int listening_socket, struct table_t *table){
  * Retorna a mensagem com o pedido ou NULL em caso de erro.
  */
 MessageT *network_receive(int client_socket){
+    MessageT *msg;
 
-
-    short response_size_short;
-
-    if(read(client_socket, &response_size_short, sizeof(short)) == -1){
-        perror("Erro ao ler tamanho da mensagem");
+    /* Receber um short indicando a dimensão do buffer onde será recebida a resposta; */
+    uint16_t msg_size;
+    ssize_t nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
+    if (nbytes != sizeof(uint16_t) && nbytes != 0) {
+        perror("Error receiving response size from the server\n");
         return NULL;
     }
+    int msg_size2 = ntohs(msg_size);
 
-    int response_size = ntohs(response_size_short);
-    if (response_size <= 0) {
-        perror("Invalid response size");
+    /* Receber a resposta colocando-a num buffer de dimensão apropriada; */
+    uint8_t *response_buffer = (uint8_t *)malloc(msg_size2);
+    nbytes = recv(client_socket, response_buffer, msg_size2, 0);
+    if (nbytes < 0) {
+        perror("Error receiving response from the server\n");
+        free(response_buffer);
         return NULL;
+    } else {
+        msg = message_t__unpack(NULL, msg_size2, response_buffer);
+        if (msg == NULL) {
+            fprintf(stderr, "Error unpacking the request message.\n");
+        }
     }
-
-
-    char *buffer = malloc(sizeof(char) * response_size);
-    if(buffer == NULL){
-        perror("Erro ao alocar memória para mensagem");
-        return NULL;
-    }
-
-    if (read(client_socket, buffer, response_size) < 0) {
-        perror("Erro ao receber mensagem");
-        free(buffer);
-        return NULL;
-    }
-
-    MessageT* msg = message_t__unpack(NULL, response_size, (uint8_t*)buffer);
-
-    free(buffer);
+    free(response_buffer);
     return msg;
 }
 
