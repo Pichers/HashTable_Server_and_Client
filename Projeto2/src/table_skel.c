@@ -62,21 +62,19 @@ int invoke(MessageT *msg, struct table_t *table){
             
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
-
+            struct entry_t* entry = entry_create(strdup(msg->entry->key), data_dup(data));
+            struct data_t* data = data_create(msg->entry->value.len, msg->entry->value.data);
             char* key = strdup(msg->key);
-            printf("key: %s\n", key);
-            printf("value: %s\n", msg->value.data);
-            printf("value len: %d\n", msg->value.len);
-            fflush(stdout);
-            struct data_t* data = data_create(msg->value.len, (char*) strdup(msg->value.data));
 
-            int i = table_put(table, key, data);
+            int i = table_put(table, entry->key, entry->value);
             free(msg->key);
 
             if(i == -1){
+                free(data);
                 return handleError(msg);
             }
-            
+            free(data);
+            entry_destroy(entry);  
             break;
         case (int) MESSAGE_T__OPCODE__OP_GET:
 
@@ -103,7 +101,7 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
             key = msg->key;
-            struct entry_t* entry = (struct entry_t*)table_get(table, key);
+            entry = (struct entry_t*)table_get(table, key);
 
             if(entry_destroy(entry) == -1){
                 return handleError(msg);

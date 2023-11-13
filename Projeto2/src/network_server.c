@@ -26,10 +26,11 @@ int network_server_init(short port){
         return -1;
     }
 
+    setsockopt(skt, SOL_SOCKET, SO_REUSEADDR, 1, 1);
     // Preenche estrutura server para bind
     server.sin_family = AF_INET;
     server.sin_port = htons(port); /* port é a porta TCP */
-    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_addr.s_addr = INADDR_ANY;
 
     // Faz bind
     if (bind(skt, (struct sockaddr *) &server, sizeof(server)) < 0){
@@ -94,7 +95,6 @@ int network_main_loop(int listening_socket, struct table_t *table){
             return -1;
         }
         int response = invoke(msg, table);
-
         if(response == -1){
             perror("Erro ao invocar função");
             close(listening_socket);
@@ -110,7 +110,7 @@ int network_main_loop(int listening_socket, struct table_t *table){
         close(client_socket);
     }
 
-    close(listening_socket);
+    network_server_close(listening_socket);
     return -1;
 }
 
@@ -161,15 +161,15 @@ int network_send(int client_socket, MessageT *msg){
         return -1;
 
 
-    int msg_size = message_t__get_packed_size(msg);
-    short msg_size_short = msg_size;
-    short msg_size_network = htons(msg_size_short);
+    size_t msg_size = message_t__get_packed_size(msg);
+    // size_t msg_size_short = msg_size;
+    uint16_t msg_size_network = htons((uint16_t)msg_size);
 
-    char *buffer = malloc(sizeof(char) * msg_size);
+    uint8_t *buffer = (uint8_t *)malloc(msg_size);
     message_t__pack(msg, (uint8_t*)buffer);
 
 
-    if (write(client_socket,&msg_size_network, sizeof(short)) < 0) {
+    if (send(client_socket,&msg_size_network, sizeof(uint16_t),0) < 0) {
         perror("Error sending message size");
         free(buffer);
         return -1;
@@ -179,7 +179,7 @@ int network_send(int client_socket, MessageT *msg){
         return -1;
     }
 
-    if (write(client_socket, buffer, msg_size) < 0){
+    if (send(client_socket, buffer, msg_size,0) < 0){
         perror("Erro ao enviar mensagem");
         free(buffer);
         return -1;
