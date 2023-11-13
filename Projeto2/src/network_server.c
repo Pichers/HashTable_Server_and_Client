@@ -16,7 +16,6 @@
  */
 int network_server_init(short port){
     int skt;
-    struct sockaddr_in server;
 
     if(port < 0)
         return -1;
@@ -28,6 +27,7 @@ int network_server_init(short port){
 
     setsockopt(skt, SOL_SOCKET, SO_REUSEADDR, 1, 1);
     // Preenche estrutura server para bind
+    struct sockaddr_in server;
     server.sin_family = AF_INET;
     server.sin_port = htons(port); /* port é a porta TCP */
     server.sin_addr.s_addr = INADDR_ANY;
@@ -69,33 +69,22 @@ int network_main_loop(int listening_socket, struct table_t *table){
     int client_socket;
     struct sockaddr_in client;
 
-    socklen_t size_client;
+    socklen_t size_client = sizeof(client);
     MessageT *msg;
     
     printf("Servidor 'a espera de dados\n");
 
     // Bloqueia a espera de pedidos de conexão
-    while ((client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client)) != -1) {
-        
+    client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
+    while (1) {
         msg = network_receive(client_socket);
-        printf("%d\n", (int)msg->opcode);
-        printf("%d\n", (int)msg->c_type);
-        printf("%s\n", msg->key);
-        printf("%s\n", msg->value.data);
-        printf("%d\n", msg->value.len);
-        printf("%d\n", msg->n_keys);
-        printf("%d\n", msg->n_entries);
-        printf("%d\n", msg->result);
-        printf("done\n");
-        fflush(stdout);
         if(msg == NULL){
             perror("Erro ao de-serializar mensagem");
             close(client_socket);
             close(listening_socket);
             return -1;
         }
-        int response = invoke(msg, table);
-        if(response == -1){
+        if(invoke(msg, table) < 0){
             perror("Erro ao invocar função");
             close(listening_socket);
             close(client_socket);
@@ -107,7 +96,6 @@ int network_main_loop(int listening_socket, struct table_t *table){
             close(client_socket);
             return -1;
         }
-        close(client_socket);
     }
 
     network_server_close(listening_socket);

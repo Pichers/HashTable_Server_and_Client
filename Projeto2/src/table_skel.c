@@ -62,15 +62,16 @@ int invoke(MessageT *msg, struct table_t *table){
             
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
-            struct entry_t* entry = entry_create(strdup(msg->entry->key), data_dup(data));
             struct data_t* data = data_create(msg->entry->value.len, msg->entry->value.data);
+            struct entry_t* entry = entry_create(strdup(msg->entry->key), data_dup(data));
             char* key = strdup(msg->key);
 
             int i = table_put(table, entry->key, entry->value);
-            free(msg->key);
+            // free(msg->key);
 
             if(i == -1){
                 free(data);
+                entry_destroy(entry);
                 return handleError(msg);
             }
             free(data);
@@ -83,16 +84,21 @@ int invoke(MessageT *msg, struct table_t *table){
 
             key = msg->key;
 
-            struct data_t* dataValue = table_get(table, key);
+            struct data_t *dataValue = table_get(table, key);
 
             if(dataValue == NULL){
-                return handleError(msg);
+                handleError(msg);
+                perror("Erro ao encontrar valor");
+
+            } else {
+                msg->value.data = (uint8_t *)dataValue->data;
+                msg->value.len = dataValue->datasize;
+
+                free(dataValue);
             }
-            else{
-                msg->value.data = dataValue->data;
-                free(msg->entry);
-                msg->key = NULL;
-            }
+
+
+
 
             break;
         case (int) MESSAGE_T__OPCODE__OP_DEL:
@@ -101,16 +107,9 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
             key = msg->key;
-            entry = (struct entry_t*)table_get(table, key);
-
-            if(entry_destroy(entry) == -1){
-                return handleError(msg);
-            }
             if(table_remove(table, key) == -1){
                 return handleError(msg);
             }
-            free(msg->key);
-            msg->key = NULL;
 
             break;
         case (int) MESSAGE_T__OPCODE__OP_SIZE:
@@ -135,8 +134,7 @@ int invoke(MessageT *msg, struct table_t *table){
 
             if(keys == NULL){
                 return handleError(msg);
-            }
-            else{
+            } else {
                 int j = 0;
                 while(keys[j] != NULL){
                     j++;
@@ -156,20 +154,24 @@ int invoke(MessageT *msg, struct table_t *table){
             
             if(keys == NULL){
                 return handleError(msg);
+                
             }
 
-            int nKeys = 0;
+            size_t nKeys = 0;
 
             while(keys[nKeys] != NULL){
                 nKeys++;
             }
-
-            struct entry_t** entries = malloc(nKeys * sizeof(struct entry_t));
-            if(entries == NULL){
+            msg->n_entries = nKeys;
+            msg->entries = (EntryT **)malloc((nKeys+1) * sizeof(struct EntryT *));
+            EntryT* entry_temp = malloc((num_keys) * sizeof(EntryT));
+            if(msg->entries == NULL){
                 return handleError(msg);
             }
 
             for(int j = 0; j < nKeys; j++){
+                entry_t__init(&entry_temp);
+
                 char* key = keys[j];
                 struct data_t* data = data_dup(table_get(table, keys[j]));
                 if(data == NULL){
