@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+
 #include "client_stub.h"
 
 
@@ -20,6 +22,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Uso: %s <server_address:port>\n", argv[0]);
         exit(1);
     }
+
+    signal(SIGPIPE, SIG_IGN);
 
     // Conecta ao servidor
     struct rtable_t *rtable = rtable_connect(argv[1]);

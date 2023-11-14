@@ -137,12 +137,20 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
 /* Fecha a ligação estabelecida por network_connect().
  * Retorna 0 (OK) ou -1 (erro).
  */
-int network_close(struct rtable_t *rtable){
-    if(rtable == NULL)
-        return -1;
-    
-    if (rtable_disconnect(rtable) == -1) {
+int network_close(struct rtable_t *rtable) {
+    if (rtable == NULL || rtable->sockfd == -1) {
+        // Invalid rtable or sockfd, nothing to close
         return -1;
     }
+
+    // Close the socket
+    if (close(rtable->sockfd) == -1) {
+        perror("Erro ao fechar a ligação");
+        return -1;
+    }
+
+    // Reset the sockfd in the rtable structure
+    rtable->sockfd = -1;
+
     return 0;
 }

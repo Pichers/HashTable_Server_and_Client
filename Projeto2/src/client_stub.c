@@ -65,12 +65,12 @@ struct rtable_t *rtable_connect(char *address_port) {
  */
 int rtable_disconnect(struct rtable_t *rtable){
     if(rtable == NULL){
-        printf("a");
+        printf("why are we trying to disconnect a NULL rtable?\n");
         return -1;
     }
         
     if(rtable->sockfd < 0){
-        printf("a");
+        printf("disconnecting a negative socket? wth\n");
         return -1;
     }
     if(network_close(rtable) == -1){

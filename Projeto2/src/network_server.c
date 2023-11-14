@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "table.h"
 #include "sdmessage.pb-c.h"
@@ -78,30 +79,29 @@ int network_main_loop(int listening_socket, struct table_t *table){
     socklen_t size_client = sizeof(client);
     MessageT *msg;
     
-    printf("Servidor pronto, 'a espera de dados\n");
+    printf("Servidor pronto\n");
 
-    // Bloqueia a espera de pedidos de conexão
-    client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
-    printf("Conexão de cliente estabelecida\n");
-    while (1) {
-        msg = network_receive(client_socket);
-        if(msg == NULL){
-            printf("Erro ao de-serializar mensagem\n");
-            close(client_socket);
-            close(listening_socket);
-            return -1;
-        }
-        if(invoke(msg, table) < 0){
-            printf("Erro ao invocar função\n");
-            close(listening_socket);
-            close(client_socket);
-            return -1;
-        }
-        if(network_send(client_socket, msg) == -1){
-            printf("Erro ao enviar mensagem\n");
-            close(listening_socket);
-            close(client_socket);
-            return -1;
+    while(1){ 
+        printf("'A espera de conexão cliente\n");   
+        // Bloqueia a espera de pedidos de conexão
+        client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
+        printf("Conexão de cliente estabelecida\n");
+
+        while (1) {
+            msg = network_receive(client_socket);
+
+            if(msg == NULL){
+                close(client_socket);
+                break;
+            }
+            if(invoke(msg, table) < 0){
+                close(client_socket);
+                break;
+            }
+            if(network_send(client_socket, msg) == -1){
+                close(client_socket);
+                break;
+            }
         }
     }
 
@@ -136,9 +136,9 @@ MessageT *network_receive(int client_socket){
         return NULL;
     } else {
         msg = message_t__unpack(NULL, msg_size2, response_buffer);
-        if (msg == NULL) {
-            fprintf(stderr, "Error unpacking the request message.\n");
-        }
+        // if (msg == NULL) {
+        //     fprintf(stderr, "Error unpacking the request message.\n");
+        // }
     }
     free(response_buffer);
     return msg;

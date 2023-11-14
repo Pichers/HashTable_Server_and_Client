@@ -1,14 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+
 #include "table_skel.h"
 #include "network_server.h"
 
 int main(int argc, char const *argv[]){
+
     if (argc != 3) {
         fprintf(stderr, "Uso: %s <port> <n_lists>\n", argv[0]);
         exit(1);
     }
+
+    // if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+    //     perror("Error setting up signal handler");
+    //     return -1;
+    // }
+    signal(SIGPIPE, SIG_IGN);
 
     int port = atoi(argv[1]);
     int n_lists = atoi(argv[2]);
