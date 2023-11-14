@@ -124,7 +124,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
         return NULL;
     }
 
-    if (read(sockfd, bufR, sizeof(MessageT)) < 0){
+    if (read(sockfd, bufR, response_size) < 0){
         perror("Erro ao receber mensagem");
         free(bufR);
         return NULL;

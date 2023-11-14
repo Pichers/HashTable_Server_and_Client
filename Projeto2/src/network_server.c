@@ -16,7 +16,6 @@
  */
 int network_server_init(short port){
     int skt;
-    struct sockaddr_in server;
 
     if(port < 0)
         return -1;
@@ -26,10 +25,12 @@ int network_server_init(short port){
         return -1;
     }
 
+    setsockopt(skt, SOL_SOCKET, SO_REUSEADDR, 1, 1);
     // Preenche estrutura server para bind
+    struct sockaddr_in server;
     server.sin_family = AF_INET;
     server.sin_port = htons(port); /* port é a porta TCP */
-    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_addr.s_addr = INADDR_ANY;
 
     // Faz bind
     if (bind(skt, (struct sockaddr *) &server, sizeof(server)) < 0){
@@ -68,27 +69,22 @@ int network_main_loop(int listening_socket, struct table_t *table){
     int client_socket;
     struct sockaddr_in client;
 
-    socklen_t size_client;
+    socklen_t size_client = sizeof(client);
     MessageT *msg;
     
     printf("Servidor 'a espera de dados\n");
 
     // Bloqueia a espera de pedidos de conexão
-    while ((client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client)) != -1) {
-        
+    client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
+    while (1) {
         msg = network_receive(client_socket);
-        printf("%d", (int)msg->opcode);
-
-        fflush(stdout);
         if(msg == NULL){
             perror("Erro ao de-serializar mensagem");
             close(client_socket);
             close(listening_socket);
             return -1;
         }
-        int response = invoke(msg, table);
-
-        if(response == -1){
+        if(invoke(msg, table) < 0){
             perror("Erro ao invocar função");
             close(listening_socket);
             close(client_socket);
@@ -101,8 +97,8 @@ int network_main_loop(int listening_socket, struct table_t *table){
             return -1;
         }
     }
-    close(client_socket);
-    close(listening_socket);
+
+    network_server_close(listening_socket);
     return -1;
 }
 
@@ -113,37 +109,31 @@ int network_main_loop(int listening_socket, struct table_t *table){
  * Retorna a mensagem com o pedido ou NULL em caso de erro.
  */
 MessageT *network_receive(int client_socket){
+    MessageT *msg;
 
-
-    short response_size_short;
-
-    if(read(client_socket, &response_size_short, sizeof(short)) == -1){
-        perror("Erro ao ler tamanho da mensagem");
+    /* Receber um short indicando a dimensão do buffer onde será recebida a resposta; */
+    uint16_t msg_size;
+    ssize_t nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
+    if (nbytes != sizeof(uint16_t) && nbytes != 0) {
+        perror("Error receiving response size from the server\n");
         return NULL;
     }
+    int msg_size2 = ntohs(msg_size);
 
-    int response_size = ntohs(response_size_short);
-    if (response_size <= 0) {
-        perror("Invalid response size");
+    /* Receber a resposta colocando-a num buffer de dimensão apropriada; */
+    uint8_t *response_buffer = (uint8_t *)malloc(msg_size2);
+    nbytes = recv(client_socket, response_buffer, msg_size2, 0);
+    if (nbytes < 0) {
+        perror("Error receiving response from the server\n");
+        free(response_buffer);
         return NULL;
+    } else {
+        msg = message_t__unpack(NULL, msg_size2, response_buffer);
+        if (msg == NULL) {
+            fprintf(stderr, "Error unpacking the request message.\n");
+        }
     }
-
-
-    char *buffer = malloc(sizeof(char) * response_size);
-    if(buffer == NULL){
-        perror("Erro ao alocar memória para mensagem");
-        return NULL;
-    }
-
-    if (read(client_socket, buffer, response_size) < 0) {
-        perror("Erro ao receber mensagem");
-        free(buffer);
-        return NULL;
-    }
-
-    MessageT* msg = message_t__unpack(NULL, response_size, (uint8_t*)buffer);
-
-    free(buffer);
+    free(response_buffer);
     return msg;
 }
 
@@ -159,15 +149,15 @@ int network_send(int client_socket, MessageT *msg){
         return -1;
 
 
-    int msg_size = message_t__get_packed_size(msg);
-    short msg_size_short = msg_size;
-    short msg_size_network = htons(msg_size_short);
+    size_t msg_size = message_t__get_packed_size(msg);
+    // size_t msg_size_short = msg_size;
+    uint16_t msg_size_network = htons((uint16_t)msg_size);
 
-    char *buffer = malloc(sizeof(char) * msg_size);
+    uint8_t *buffer = (uint8_t *)malloc(msg_size);
     message_t__pack(msg, (uint8_t*)buffer);
 
 
-    if (write(client_socket,&msg_size_network, sizeof(short)) < 0) {
+    if (send(client_socket,&msg_size_network, sizeof(uint16_t),0) < 0) {
         perror("Error sending message size");
         free(buffer);
         return -1;
@@ -177,7 +167,7 @@ int network_send(int client_socket, MessageT *msg){
         return -1;
     }
 
-    if (write(client_socket, buffer, msg_size) < 0){
+    if (send(client_socket, buffer, msg_size,0) < 0){
         perror("Erro ao enviar mensagem");
         free(buffer);
         return -1;
