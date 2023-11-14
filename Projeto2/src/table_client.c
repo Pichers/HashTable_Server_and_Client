@@ -86,7 +86,12 @@ int main(int argc, char *argv[]) {
                     printf("Elemento nao encontrado, ou erro ao obte-lo\n");
                 }
                 else{
-                    printf("Elemento encontrado: %s\n",(char*) data->data);
+                    char* str = malloc(data->datasize + 1);
+                    memcpy(str, data->data, data->datasize);
+                    str[data->datasize] = '\0';
+
+                    printf("Elemento encontrado: %s\n", str);
+                    free(str);
                 }
                 data_destroy(data);
             }
@@ -145,7 +150,15 @@ int main(int argc, char *argv[]) {
             else{
                 printf("Tabela: \n");
                 for (int i = 0; entries[i] != NULL; i++){
-                    printf("%s :: %s \n", entries[i]->key,(char*) entries[i]->value->data);
+                    struct entry_t* e = entries[i];
+
+                    char* str = malloc(e->value->datasize + 1);
+                    memcpy(str, e->value->data, e->value->datasize);
+                    str[e->value->datasize] = '\0';
+
+
+                    printf("%s :: %s \n", entries[i]->key,str);
+                    free(str);
                 }
                 rtable_free_entries(entries);
             }

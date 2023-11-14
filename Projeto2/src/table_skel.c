@@ -87,8 +87,8 @@ int invoke(MessageT *msg, struct table_t *table){
             struct data_t *dataValue = table_get(table, key);
 
             if(dataValue == NULL){
+                printf("Erro ao obter elemento da tabela\n");
                 handleError(msg);
-                perror("Erro ao encontrar valor");
 
             } else {
                 msg->value.data = (uint8_t *)dataValue->data;
@@ -96,9 +96,6 @@ int invoke(MessageT *msg, struct table_t *table){
 
                 free(dataValue);
             }
-
-
-
 
             break;
         case (int) MESSAGE_T__OPCODE__OP_DEL:
@@ -163,14 +160,18 @@ int invoke(MessageT *msg, struct table_t *table){
                 nKeys++;
             }
             msg->n_entries = nKeys;
-            msg->entries = (EntryT **)malloc((nKeys+1) * sizeof(struct EntryT *));
-            EntryT* entry_temp = malloc((num_keys) * sizeof(EntryT));
+            msg->entries = (EntryT **) malloc((nKeys+1) * sizeof(struct EntryT *));
+
+            EntryT** entries = malloc((nKeys) * sizeof(EntryT));
+            
             if(msg->entries == NULL){
                 return handleError(msg);
             }
 
             for(int j = 0; j < nKeys; j++){
-                entry_t__init(&entry_temp);
+
+                EntryT* entry_temp = malloc(sizeof(EntryT));
+                entry_t__init(entry_temp);
 
                 char* key = keys[j];
                 struct data_t* data = data_dup(table_get(table, keys[j]));
@@ -183,17 +184,21 @@ int invoke(MessageT *msg, struct table_t *table){
                     return handleError(msg);
                 }
 
-                struct entry_t* entry = malloc(sizeof(struct entry_t));
-                if(entry == NULL){
-                    return handleError(msg);
-                }
+                // struct entry_t* entry = malloc(sizeof(struct entry_t));
+                // if(entry == NULL){
+                //     return handleError(msg);
+                // }
 
-                entry = entry_create(dupKey, data);
-                entries[j] = entry;
+                entry_temp->key = dupKey;
+                entry_temp->value.len = data->datasize;
+                entry_temp->value.data = data->data;
+
+                //entry = entry_create(dupKey, data);
+                entries[j] = entry_temp;
             }
 
             msg->n_entries = nKeys;
-            EntryT** msg_entries = (EntryT**)entries;
+            EntryT** msg_entries = (EntryT**) entries;
             msg->entries = msg_entries;
 
             break;

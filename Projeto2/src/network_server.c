@@ -21,11 +21,17 @@ int network_server_init(short port){
         return -1;
     
     if ((skt = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
-        perror("Erro ao criar socket");
+        printf("Erro ao criar socket");
         return -1;
     }
 
-    setsockopt(skt, SOL_SOCKET, SO_REUSEADDR, 1, 1);
+    int yes = 1;
+
+    if (setsockopt(skt, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+        printf("Erro ao configurar socket");
+        return -1;
+    }
+
     // Preenche estrutura server para bind
     struct sockaddr_in server;
     server.sin_family = AF_INET;
@@ -34,14 +40,14 @@ int network_server_init(short port){
 
     // Faz bind
     if (bind(skt, (struct sockaddr *) &server, sizeof(server)) < 0){
-        perror("Erro ao fazer bind");
+        printf("Erro ao fazer bind");
         close(skt);
         return -1;
     };
 
      // Faz listen
     if (listen(skt, 0) < 0){
-        perror("Erro ao executar listen");
+        printf("Erro ao executar listen");
         close(skt);
         return -1;
     };
@@ -72,26 +78,27 @@ int network_main_loop(int listening_socket, struct table_t *table){
     socklen_t size_client = sizeof(client);
     MessageT *msg;
     
-    printf("Servidor 'a espera de dados\n");
+    printf("Servidor pronto, 'a espera de dados\n");
 
     // Bloqueia a espera de pedidos de conexão
     client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
+    printf("Conexão de cliente estabelecida\n");
     while (1) {
         msg = network_receive(client_socket);
         if(msg == NULL){
-            perror("Erro ao de-serializar mensagem");
+            printf("Erro ao de-serializar mensagem\n");
             close(client_socket);
             close(listening_socket);
             return -1;
         }
         if(invoke(msg, table) < 0){
-            perror("Erro ao invocar função");
+            printf("Erro ao invocar função\n");
             close(listening_socket);
             close(client_socket);
             return -1;
         }
         if(network_send(client_socket, msg) == -1){
-            perror("Erro ao enviar mensagem");
+            printf("Erro ao enviar mensagem\n");
             close(listening_socket);
             close(client_socket);
             return -1;
@@ -115,7 +122,7 @@ MessageT *network_receive(int client_socket){
     uint16_t msg_size;
     ssize_t nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
     if (nbytes != sizeof(uint16_t) && nbytes != 0) {
-        perror("Error receiving response size from the server\n");
+        printf("Error receiving response size from the server\n");
         return NULL;
     }
     int msg_size2 = ntohs(msg_size);
@@ -124,7 +131,7 @@ MessageT *network_receive(int client_socket){
     uint8_t *response_buffer = (uint8_t *)malloc(msg_size2);
     nbytes = recv(client_socket, response_buffer, msg_size2, 0);
     if (nbytes < 0) {
-        perror("Error receiving response from the server\n");
+        printf("Error receiving response from the server\n");
         free(response_buffer);
         return NULL;
     } else {
@@ -158,17 +165,17 @@ int network_send(int client_socket, MessageT *msg){
 
 
     if (send(client_socket,&msg_size_network, sizeof(uint16_t),0) < 0) {
-        perror("Error sending message size");
+        printf("Error sending message size");
         free(buffer);
         return -1;
     }
     if (buffer == NULL) {
-        perror("??wtf??");
+        printf("??wtf??");
         return -1;
     }
 
     if (send(client_socket, buffer, msg_size,0) < 0){
-        perror("Erro ao enviar mensagem");
+        printf("Erro ao enviar mensagem");
         free(buffer);
         return -1;
     }
@@ -186,7 +193,7 @@ int network_server_close(int socket){
         return -1;
 
     if(close(socket) == -1){
-        perror("Erro ao fechar socket");
+        printf("Erro ao fechar socket");
         return -1;
     }
 

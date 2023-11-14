@@ -52,7 +52,7 @@ struct rtable_t *rtable_connect(char *address_port) {
 
     int i = network_connect(rtable);
     if (i == -1){
-        perror("Error network connecting");
+        printf("Error network connecting");
         return NULL;
     }
     
@@ -88,6 +88,7 @@ int rtable_disconnect(struct rtable_t *rtable){
  * Retorna 0 (OK, em adição/substituição), ou -1 (erro).
  */
 int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
+
     if(rtable == NULL || entry == NULL)
         return -1;
     
@@ -100,18 +101,18 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
 
     e.key = entry->key;
 
-    size_t entryPackedLen = entry_t__get_packed_size(&e);
-    uint8_t *entryPacked = malloc(entryPackedLen);
+    // size_t entryPackedLen = entry_t__get_packed_size(&e);
+    uint8_t *packedData = malloc(entry->value->datasize);
     
-    if(entryPacked == NULL){
+    if(packedData == NULL){
         printf("Error allocating memory for entry\n");
         return -1;
     }
 
-    memcpy(entryPacked, entry->value->data, entryPackedLen);
+    memcpy(packedData, entry->value->data, entry->value->datasize);
 
-    e.value.len = entryPackedLen;
-    e.value.data = entryPacked;
+    e.value.len = entry->value->datasize;
+    e.value.data = packedData;
 
     msg.entry = &e;
 
@@ -123,7 +124,7 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
         return -1;
     }
     message_t__free_unpacked(ret, NULL);
-    free(entryPacked);
+    free(packedData);
 
     return 0;
 }
@@ -149,14 +150,14 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key){
     void* dataValue = malloc(ret->value.len);
     if(dataValue == NULL){
         message_t__free_unpacked(ret, NULL);
-        printf("Error creating data value\n");
+        // printf("Error creating data value\n");
         return NULL;
     }
     memcpy(dataValue, ret->value.data, ret->value.len);
 
     struct data_t* data = data_create(ret->value.len,dataValue);
     if(data == NULL){
-        printf("Error creating data\n");
+        // printf("Error creating data\n");
         message_t__free_unpacked(ret, NULL);
         return NULL;
     }

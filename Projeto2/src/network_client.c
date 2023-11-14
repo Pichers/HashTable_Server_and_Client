@@ -114,9 +114,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
         return NULL;
     }
 
-
     //receive msg
-
     void *bufR = malloc(response_size);
     if (bufR == NULL) {
         perror("??wtf??");
