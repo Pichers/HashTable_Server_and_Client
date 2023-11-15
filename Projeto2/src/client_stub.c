@@ -234,7 +234,7 @@ char **rtable_get_keys(struct rtable_t *rtable){
     }
 
     char** retKeys = ret->keys;
-    char** keys = malloc(sizeof(char*) * ret->n_keys);
+    char** keys = malloc(sizeof(char*) * (ret->n_keys + 1));
 
     for (int i = 0; i < ret->n_keys; i++){
         keys[i] = strdup(retKeys[i]);
@@ -275,7 +275,7 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
         return NULL;
     }
 
-    struct entry_t** entries = malloc(sizeof(struct entry_t*) * ret->n_entries + 1);
+    struct entry_t** entries = malloc(sizeof(struct entry_t*) * (ret->n_entries + 1));
     if(entries == NULL){
         printf("Error allocating memory for entries\n");
         message_t__free_unpacked(ret, NULL);

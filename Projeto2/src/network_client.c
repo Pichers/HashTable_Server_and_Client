@@ -128,10 +128,13 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
         return NULL;
     }
 
+    MessageT msg_resposta = MESSAGE_T__INIT;
+    MessageT* response = &msg_resposta;
 
-    MessageT *msg_resposta = message_t__unpack(NULL, response_size, bufR);
+    response = message_t__unpack(NULL, response_size, bufR);
+    
     free(bufR);
-    return msg_resposta;
+    return response;
 }
 
 /* Fecha a ligação estabelecida por network_connect().

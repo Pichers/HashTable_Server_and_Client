@@ -138,6 +138,7 @@ int invoke(MessageT *msg, struct table_t *table){
                 }                      
 
                 msg->n_keys = j; 
+                msg->keys = malloc(j * sizeof(char*));
                 msg->keys = keys;
             }
 
