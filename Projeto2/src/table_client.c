@@ -47,116 +47,114 @@ int main(int argc, char *argv[]) {
         }
 
         if (strcmp(token, "put") == 0) {
-            // Processar comando put
+
             char *key = strtok(NULL, " \n");
             char *data = strtok(NULL, "\n");
 
             if (key == NULL || data == NULL) {
-                printf("Comando put requer <key> e <data>\n");
+                printf("Comando put requer <key> e <data>\n\n");
             } else {
                 char* tempData = strdup(data);
                 struct data_t* datat = data_create(strlen(data), tempData);
                 if (datat == NULL) {
-                    printf("Erro ao criar data\n");
-                    exit(1);
+                    printf("Erro ao criar data\n\n");
                 }
                 char* tempKey = strdup(key);
 
                 struct entry_t* entry = entry_create(tempKey, datat);
                 if (entry == NULL) {
-                    printf("Erro ao criar entry\n");
-                    exit(1);
+                    printf("Erro ao criar entry\n\n");
                 }
 
                 int a = rtable_put(rtable, entry);
                 if(a == -1)
-                    printf("Erro ao inserir elemento\n");
+                    printf("Erro ao inserir elemento\n\n");
                 
-                printf("Inserindo elemento: %s\n", entry->key);
+                printf("Inserindo elemento: %s\n\n", entry->key);
 
                 entry_destroy(entry);
             }
         } else if (strcmp(token, "get") == 0) {
-            // Processar comando get
+
             char *key = strtok(NULL, " \n");
 
             if (key == NULL) {
-                printf("Comando get requer <key>\n");
+                printf("Comando get requer <key>\n\n");
             } else {
-                // Chamar a função rtable_get
-                // Implemente o código para chamar rtable_get aqui
+
                 struct data_t* data = rtable_get(rtable, key);
                 if (data == NULL) {
-                    printf("Elemento nao encontrado, ou erro ao obte-lo\n");
+                    printf("Elemento nao encontrado, ou erro ao obte-lo\n\n");
                 }
                 else{
                     char* str = malloc(data->datasize + 1);
                     memcpy(str, data->data, data->datasize);
                     str[data->datasize] = '\0';
 
-                    printf("Elemento encontrado: %s\n", str);
+                    printf("Elemento encontrado: %s\n\n", str);
                     free(str);
                 }
                 data_destroy(data);
             }
         } else if (strcmp(token, "del") == 0) {
-            // Processar comando del
+
             char *key = strtok(NULL, " \n");
 
             if (key == NULL) {
-                printf("Comando del requer <key>\n");
+                printf("Comando del requer <key>\n\n");
             } else {
                 
-                // Chamar a função rtable_del
-                // Implemente o código para chamar rtable_del aqui
                 int a = rtable_del(rtable, key);
                 if(a == -1){
-                    printf("Elemento nao encontrado, ou erro ao apaga-lo\n");
+                    printf("Elemento nao encontrado, ou erro ao apaga-lo\n\n");
                 }
                 else{
-                    printf("Elemento com a chave %s apagado\n", key);
+                    printf("Elemento com a chave %s apagado\n\n", key);
                 }
             }
         } else if (strcmp(token, "size") == 0) {
-            // Processar comando size
-            // Chamar a função rtable_size
-            // Implemente o código para chamar rtable_size aqui
+
             int a = rtable_size(rtable);
             if(a == -1){
-                printf("Erro ao obter tamanho da tabela\n");
+                printf("Erro ao obter tamanho da tabela\n\n");
             }
             else{
-                printf("Tamanho da tabela: %d\n", a);
+                printf("Tamanho da tabela: %d\n\n", a);
             }
 
         } else if (strcmp(token, "getkeys") == 0) {
-            // Processar comando getkeys
-            // Chamar a função rtable_get_keys
-            // Implemente o código para chamar rtable_get_keys aqui
+
             char** keys = rtable_get_keys(rtable);
+
             if(keys == NULL){
-                printf("Erro ao obter chaves da tabela\n");
+                printf("Erro ao obter chaves da tabela\n\n");
+            }else if(keys[0] == NULL){
+                printf("Tabela vazia\n\n");
             }else{
                 printf("Chaves da tabela: \n");
                 for (int i = 0; keys[i] != NULL; i++){
                     printf("%s \n", keys[i]);
                 }
+                printf("\n");
                 rtable_free_keys(keys);
             }
         } else if (strcmp(token, "gettable") == 0) {
-            // Processar comando gettable
-            // Chamar a função rtable_get_table
-            // Implemente o código para chamar rtable_get_table aqui
+
             struct entry_t** entries = rtable_get_table(rtable);
+
             if(entries == NULL){
-                printf("Erro ao obter tabela\n");
-            }
-            else{
+                printf("Erro ao obter tabela\n\n");
+            }else if(entries[0] == NULL){
+                printf("Tabela vazia\n\n");
+            }else{
                 printf("Tabela: \n");
                 for (int i = 0; entries[i] != NULL; i++){
                     struct entry_t* e = entries[i];
 
                     char* str = malloc(e->value->datasize + 1);
+                    if(str == NULL){
+                        printf("Erro ao alocar memoria para entrada\n\n");
+                    }
                     memcpy(str, e->value->data, e->value->datasize);
                     str[e->value->datasize] = '\0';
 
@@ -164,14 +162,14 @@ int main(int argc, char *argv[]) {
                     printf("%s :: %s \n", entries[i]->key,str);
                     free(str);
                 }
+                printf("\n");
                 rtable_free_entries(entries);
             }
             
         } else if (strcmp(token, "quit") == 0) {
-            // Encerra o programa cliente
 
             if(rtable_disconnect(rtable) == -1){
-                printf("Erro ao desconectar do servidor\n");
+                printf("Erro ao desconectar do servidor\n\n");
             }
             printf("Bye bye client\n");
             break;
@@ -179,6 +177,7 @@ int main(int argc, char *argv[]) {
             help();
         }
     }
-
+    rtable_disconnect(rtable);
+    exit(0);
     return 0;
 }

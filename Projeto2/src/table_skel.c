@@ -49,10 +49,10 @@ int handleError(MessageT* msg){
 int invoke(MessageT *msg, struct table_t *table){
 
     if(table == NULL){
-        return handleError(msg);
+        handleError(msg);
     }
     if(msg == NULL){
-        return handleError(msg);
+        handleError(msg);
     }
 
     MessageT__Opcode opCode = msg->opcode;
@@ -72,7 +72,7 @@ int invoke(MessageT *msg, struct table_t *table){
             if(i == -1){
                 free(data);
                 entry_destroy(entry);
-                return handleError(msg);
+                handleError(msg);
             }
             free(data);
             entry_destroy(entry);  
@@ -105,7 +105,7 @@ int invoke(MessageT *msg, struct table_t *table){
 
             key = msg->key;
             if(table_remove(table, key) == -1){
-                return handleError(msg);
+                handleError(msg);
             }
 
             break;
@@ -117,7 +117,7 @@ int invoke(MessageT *msg, struct table_t *table){
             int size = table_size(table);
 
             if(size == -1){
-                return handleError(msg);
+                handleError(msg);
             }
             msg->result = size;
 
@@ -130,7 +130,7 @@ int invoke(MessageT *msg, struct table_t *table){
             char** keys = table_get_keys(table);
 
             if(keys == NULL){
-                return handleError(msg);
+                handleError(msg);
             } else {
                 int j = 0;
                 while(keys[j] != NULL){
@@ -151,8 +151,7 @@ int invoke(MessageT *msg, struct table_t *table){
             keys = table_get_keys(table);
             
             if(keys == NULL){
-                return handleError(msg);
-                
+                handleError(msg);
             }
 
             size_t nKeys = 0;
@@ -166,7 +165,7 @@ int invoke(MessageT *msg, struct table_t *table){
             EntryT** entries = malloc((nKeys) * sizeof(EntryT));
             
             if(msg->entries == NULL){
-                return handleError(msg);
+                handleError(msg);
             }
 
             for(int j = 0; j < nKeys; j++){
@@ -177,12 +176,12 @@ int invoke(MessageT *msg, struct table_t *table){
                 char* key = keys[j];
                 struct data_t* data = data_dup(table_get(table, keys[j]));
                 if(data == NULL){
-                    return handleError(msg);
+                    handleError(msg);
                 }
 
                 char* dupKey = strdup(key);
                 if(dupKey == NULL){
-                    return handleError(msg);
+                    handleError(msg);
                 }
 
                 // struct entry_t* entry = malloc(sizeof(struct entry_t));

@@ -138,8 +138,9 @@ void* client_handler(void* arg){
             break;
         }
     }
-    printf("Conexão com o cliente encerrada. Socket: %d", client_socket);
-    
+    printf("Conexão com o cliente encerrada. Socket: %d\n", client_socket);
+    fflush(stdout);
+
     close(client_socket);
     free(args);
     return NULL;

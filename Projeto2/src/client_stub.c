@@ -118,11 +118,13 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
 
     MessageT* ret = network_send_receive(rtable, &msg);
 
-    if(ret == NULL){
+    if(ret  == NULL){
         printf("Error sending message\n");
-        // free(msg);
         return -1;
-    }
+    }  
+    if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+        return -1;
+    } 
     message_t__free_unpacked(ret, NULL);
     free(packedData);
 
@@ -144,6 +146,13 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key){
     msg.key = strdup(key);
 
     MessageT* ret = network_send_receive(rtable, &msg);
+    if(ret  == NULL){
+        printf("Error sending message\n");
+        return NULL;
+    }  
+    if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+        return NULL;
+    } 
 
     free(msg.key);
 
@@ -185,6 +194,10 @@ int rtable_del(struct rtable_t *rtable, char *key){
         printf("Error sending message\n");
         return -1;
     }
+    // printf("opcode == error: %d\n", (ret->opcode == MESSAGE_T__OPCODE__OP_ERROR));
+    if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+        return -1;
+    }
     message_t__free_unpacked(ret, NULL);
     return 0;
 }
@@ -205,7 +218,10 @@ int rtable_size(struct rtable_t *rtable){
     if(ret  == NULL){
         printf("Error sending message\n");
         return -1;
-    }    
+    }  
+    if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+        return -1;
+    }  
     int size = ret->result;
 
     message_t__free_unpacked(ret, NULL);
@@ -232,9 +248,17 @@ char **rtable_get_keys(struct rtable_t *rtable){
         printf("Error sending message\n");
         return NULL;
     }
-
+    if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+        return NULL;
+    }
     char** retKeys = ret->keys;
     char** keys = malloc(sizeof(char*) * (ret->n_keys + 1));
+    
+    if(keys == NULL){
+        printf("Error allocating memory for keys\n");
+        message_t__free_unpacked(ret, NULL);
+        return NULL;
+    }
 
     for (int i = 0; i < ret->n_keys; i++){
         keys[i] = strdup(retKeys[i]);
@@ -272,6 +296,9 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
     MessageT* ret = network_send_receive(rtable, &msg);
     if(ret == NULL){
         printf("Error sending message\n");
+        return NULL;
+    }
+    if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
         return NULL;
     }
 
