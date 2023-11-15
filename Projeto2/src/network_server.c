@@ -5,11 +5,19 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "table.h"
 #include "sdmessage.pb-c.h"
 #include "network_server.h"
 #include "table_skel.h"
+
+struct thread_args{
+    int client_socket;
+    struct table_t* table;
+};
+
+void* client_handler(void* arg);
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.
@@ -46,7 +54,7 @@ int network_server_init(short port){
         return -1;
     };
 
-     // Faz listen
+    // Faz listen
     if (listen(skt, 0) < 0){
         printf("Erro ao executar listen");
         close(skt);
@@ -77,36 +85,62 @@ int network_main_loop(int listening_socket, struct table_t *table){
     struct sockaddr_in client;
 
     socklen_t size_client = sizeof(client);
-    MessageT *msg;
     
     printf("Servidor pronto\n");
 
     while(1){ 
-        printf("'A espera de conexão cliente\n");   
+        printf("À espera de conexão cliente\n");   
         // Bloqueia a espera de pedidos de conexão
         client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
         printf("Conexão de cliente estabelecida\n");
 
-        while (1) {
-            msg = network_receive(client_socket);
+        pthread_t thr;
 
-            if(msg == NULL){
-                close(client_socket);
-                break;
-            }
-            if(invoke(msg, table) < 0){
-                close(client_socket);
-                break;
-            }
-            if(network_send(client_socket, msg) == -1){
-                close(client_socket);
-                break;
-            }
+        struct thread_args* targs = malloc(sizeof(struct thread_args));
+        if(targs == NULL){
+            printf("Error allocating memory for thread args");
+            continue;
         }
-    }
+        targs->client_socket = client_socket;
+        targs->table = table;
 
+        pthread_create(&thr, NULL, &client_handler, targs);
+        pthread_detach(thr);
+    }
+    //fechar as threads?
     network_server_close(listening_socket);
     return -1;
+}
+
+void* client_handler(void* arg){
+    int client_socket;
+    struct table_t* table;
+    struct thread_args *args;
+
+    while (1) {
+        args = (struct thread_args *) arg;
+
+        client_socket = args->client_socket;
+        table = args->table;
+
+        MessageT* msg = network_receive(client_socket);
+
+        if(msg == NULL){
+            close(client_socket);
+            break;
+        }
+        if(invoke(msg, table) < 0){
+            close(client_socket);
+            break;
+        }
+        if(network_send(client_socket, msg) == -1){
+            close(client_socket);
+            break;
+        }
+    }
+    close(client_socket);
+    free(args);
+    return NULL;
 }
 
 /* A função network_receive() deve:
