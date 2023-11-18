@@ -61,7 +61,7 @@ int invoke(MessageT *msg, struct table_t *table){
         case (int) MESSAGE_T__OPCODE__OP_PUT:
             
             msg->opcode++;
-            msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
+            msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;P
             struct data_t* data = data_create(msg->entry->value.len, msg->entry->value.data);
             struct entry_t* entry = entry_create(strdup(msg->entry->key), data_dup(data));
             char* key = strdup(msg->key);
@@ -200,6 +200,10 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->n_entries = nKeys;
             EntryT** msg_entries = (EntryT**) entries;
             msg->entries = msg_entries;
+
+            break;
+        case (int) MESSAGE_T__OPCODE__OP_STATS:
+            //TODO
 
             break;
         default: // Case BAD || ERROR

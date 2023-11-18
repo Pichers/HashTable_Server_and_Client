@@ -4,6 +4,7 @@
 #include <signal.h>
 
 #include "client_stub.h"
+#include "stats.h"
 
 
 void help() {
@@ -83,8 +84,6 @@ int main(int argc, char *argv[]) {
             if (key == NULL) {
                 printf("Comando get requer <key>\n");
             } else {
-                // Chamar a função rtable_get
-                // Implemente o código para chamar rtable_get aqui
                 struct data_t* data = rtable_get(rtable, key);
                 if (data == NULL) {
                     printf("Elemento nao encontrado, ou erro ao obte-lo\n");
@@ -130,9 +129,6 @@ int main(int argc, char *argv[]) {
             }
 
         } else if (strcmp(token, "getkeys") == 0) {
-            // Processar comando getkeys
-            // Chamar a função rtable_get_keys
-            // Implemente o código para chamar rtable_get_keys aqui
             char** keys = rtable_get_keys(rtable);
             if(keys == NULL){
                 printf("Erro ao obter chaves da tabela\n");
@@ -144,9 +140,6 @@ int main(int argc, char *argv[]) {
                 rtable_free_keys(keys);
             }
         } else if (strcmp(token, "gettable") == 0) {
-            // Processar comando gettable
-            // Chamar a função rtable_get_table
-            // Implemente o código para chamar rtable_get_table aqui
             struct entry_t** entries = rtable_get_table(rtable);
             if(entries == NULL){
                 printf("Erro ao obter tabela\n");
@@ -175,6 +168,17 @@ int main(int argc, char *argv[]) {
             }
             printf("Bye bye client\n");
             break;
+        } else if (strcmp(token, "stats") == 0) {
+            struct stats_t* stats = rtable_stats(rtable);
+            if(stats == NULL){
+                printf("Erro ao obter estatisticas da tabela\n");
+            }else{
+                printf("Estatisticas da tabela: \n");
+                printf("Numero de operacoes: %d\n", stats->total_operations);
+                printf("Clientes atuais: %d\n", stats->connected_clients);
+                printf("Tempo total: %d\n", stats->total_time);
+            }
+
         } else {
             help();
         }
