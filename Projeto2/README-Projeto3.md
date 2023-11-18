@@ -15,4 +15,4 @@ O projeto está organizado de acordo com a seguinte estrutura:
         Subdiretorio "src": que contém of ficheiros .c
 
 Decisões de implementação:
-    Foi escolhido criar um header file privado mutex-private.h, responsável por partilhar as variáveis necessárias para a sincronização.
+    Foi escolhido criar um header file privado, mutex-private.h, responsável por partilhar as variáveis necessárias para a sincronização.
