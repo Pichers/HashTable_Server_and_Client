@@ -34,12 +34,32 @@ int table_skel_destroy(struct table_t *table){
     return table_destroy(table);
 }
 
+//sets the msg values to those of an error message
 int handleError(MessageT* msg){
     msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
 
     msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
     return -1;
+}
+
+//aquires the lock if needed, and waits for the counter to be greater than 0
+void sync(aquire){
+    if(aquire)
+        pthread_mutex_lock(&mux);
+
+    while(counter <= 0){
+        pthread_cond_wait(&cond, &mux);
+    }
+    if(aquire)
+        counter--;
+}
+
+//releases the lock
+void release(){
+    counter++;
+    pthread_cond_signal(&cond);
+    pthread_mutex_unlock(&mux);
 }
 
 
@@ -64,19 +84,12 @@ int invoke(MessageT *msg, struct table_t *table){
             char* key = strdup(msg->key);
 
             //aquire lock
-            pthread_mutex_lock(&mux);
-
-            while(counter <= 0){
-                pthread_cond_wait(&cond, &mux);
-            }
-            counter--;
+            sync(1);
 
             //critical section
             int i = table_put(table, entry->key, entry->value);
 
-            counter++;
-            pthread_cond_signal(&cond);
-            pthread_mutex_unlock(&mux);
+            release();
             //lock released
 
             if(i == -1){
@@ -94,9 +107,9 @@ int invoke(MessageT *msg, struct table_t *table){
 
             key = msg->key;
 
-            while(counter <= 0){
-                pthread_cond_wait(&cond, &mux);
-            }
+            //wait for permission to read
+            sync(0);
+            //critical section
             struct data_t *dataValue = table_get(table, key);
 
             if(dataValue == NULL){
@@ -119,20 +132,13 @@ int invoke(MessageT *msg, struct table_t *table){
             key = msg->key;
 
             //aquire lock
-            pthread_mutex_lock(&mux);
-
-            while(counter <= 0){
-                pthread_cond_wait(&cond, &mux);
-            }
-            counter--;
+            sync(1);
             //critical section
             if(table_remove(table, key) == -1){
                 handleError(msg);
             }
 
-            counter++;
-            pthread_cond_signal(&cond);
-            pthread_mutex_unlock(&mux);
+            release();
             //lock released
 
             break;
@@ -142,9 +148,9 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
 
 
-            while(counter <= 0){
-                pthread_cond_wait(&cond, &mux);
-            }
+            //wait for permission to read
+            sync(0);
+            //critical section
             int size = table_size(table);
 
             if(size == -1){
@@ -159,9 +165,9 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
 
-            while(counter <= 0){
-                pthread_cond_wait(&cond, &mux);
-            }
+            //wait for permission to read
+            sync(0);
+            //critical section
             char** keys = table_get_keys(table);
 
             if(keys == NULL){
@@ -183,9 +189,9 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
-            while(counter <= 0){
-                pthread_cond_wait(&cond, &mux);
-            }
+            //wait for permission to read
+            sync(0);
+            //critical section
             keys = table_get_keys(table);
             
             if(keys == NULL){
@@ -222,16 +228,10 @@ int invoke(MessageT *msg, struct table_t *table){
                     handleError(msg);
                 }
 
-                // struct entry_t* entry = malloc(sizeof(struct entry_t));
-                // if(entry == NULL){
-                //     return handleError(msg);
-                // }
-
                 entry_temp->key = dupKey;
                 entry_temp->value.len = data->datasize;
                 entry_temp->value.data = data->data;
 
-                //entry = entry_create(dupKey, data);
                 entries[j] = entry_temp;
             }
 
