@@ -52,10 +52,12 @@ struct rtable_t *rtable_connect(char *address_port) {
 
     int i = network_connect(rtable);
     if (i == -1){
+        free(hostname);
         printf("Error network connecting");
         return NULL;
     }
     
+    free(hostname);
     printf("Connected to server\n");
     return rtable;
 }
@@ -77,8 +79,7 @@ int rtable_disconnect(struct rtable_t *rtable){
         printf("Error closing socket in rtable\n");
         return -1;
     }
-    
-    free(rtable->server_address);
+
     free(rtable);
     return 0;
 }
@@ -215,7 +216,7 @@ int rtable_size(struct rtable_t *rtable){
 
     MessageT* ret = network_send_receive(rtable, &msg);
 
-    if(ret  == NULL){
+    if(ret == NULL){
         printf("Error sending message\n");
         return -1;
     }  
@@ -313,8 +314,19 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
     for(int i = 0; i < ret->n_entries; i++){
         EntryT* e = entriesT[i];
 
-        char* dataValue = strdup((char*)(e->value.data));
-        struct data_t* data = data_create(e->value.len, dataValue);
+        char* dataValue = malloc(e->value.len + 1);
+        if(dataValue == NULL){
+            message_t__free_unpacked(ret, NULL);
+            return NULL;
+        }
+
+        memcpy(dataValue, e->value.data, e->value.len);
+        dataValue[e->value.len] = '\0';
+
+        char* dataValueDup = strdup(dataValue);
+        struct data_t* data = data_create(e->value.len, dataValueDup);
+
+        free(dataValue);
 
         char* keyDup = strdup(e->key);
         struct entry_t* entry = entry_create(keyDup, data);

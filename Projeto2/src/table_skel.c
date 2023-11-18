@@ -8,6 +8,7 @@
 #include "entry.h"
 #include "table.h"
 #include "sdmessage.pb-c.h"
+#include "mutex-private.h"
 
 /* Inicia o skeleton da tabela.
  * O main() do servidor deve chamar esta função antes de poder usar a
@@ -48,12 +49,8 @@ int handleError(MessageT* msg){
 */
 int invoke(MessageT *msg, struct table_t *table){
 
-    if(table == NULL){
+    if(table == NULL || msg == NULL)
         handleError(msg);
-    }
-    if(msg == NULL){
-        handleError(msg);
-    }
 
     MessageT__Opcode opCode = msg->opcode;
 
@@ -66,8 +63,21 @@ int invoke(MessageT *msg, struct table_t *table){
             struct entry_t* entry = entry_create(strdup(msg->entry->key), data_dup(data));
             char* key = strdup(msg->key);
 
+            //aquire lock
+            pthread_mutex_lock(&mux);
+
+            while(counter <= 0){
+                pthread_cond_wait(&cond, &mux);
+            }
+            counter--;
+
+            //critical section
             int i = table_put(table, entry->key, entry->value);
-            // free(msg->key);
+
+            counter++;
+            pthread_cond_signal(&cond);
+            pthread_mutex_unlock(&mux);
+            //lock released
 
             if(i == -1){
                 free(data);
@@ -84,6 +94,9 @@ int invoke(MessageT *msg, struct table_t *table){
 
             key = msg->key;
 
+            while(counter <= 0){
+                pthread_cond_wait(&cond, &mux);
+            }
             struct data_t *dataValue = table_get(table, key);
 
             if(dataValue == NULL){
@@ -104,9 +117,23 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
             key = msg->key;
+
+            //aquire lock
+            pthread_mutex_lock(&mux);
+
+            while(counter <= 0){
+                pthread_cond_wait(&cond, &mux);
+            }
+            counter--;
+            //critical section
             if(table_remove(table, key) == -1){
                 handleError(msg);
             }
+
+            counter++;
+            pthread_cond_signal(&cond);
+            pthread_mutex_unlock(&mux);
+            //lock released
 
             break;
         case (int) MESSAGE_T__OPCODE__OP_SIZE:
@@ -114,6 +141,10 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
 
+
+            while(counter <= 0){
+                pthread_cond_wait(&cond, &mux);
+            }
             int size = table_size(table);
 
             if(size == -1){
@@ -127,6 +158,10 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
+
+            while(counter <= 0){
+                pthread_cond_wait(&cond, &mux);
+            }
             char** keys = table_get_keys(table);
 
             if(keys == NULL){
@@ -148,6 +183,9 @@ int invoke(MessageT *msg, struct table_t *table){
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
+            while(counter <= 0){
+                pthread_cond_wait(&cond, &mux);
+            }
             keys = table_get_keys(table);
             
             if(keys == NULL){

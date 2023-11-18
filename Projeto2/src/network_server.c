@@ -10,6 +10,7 @@
 #include "table.h"
 #include "sdmessage.pb-c.h"
 #include "network_server.h"
+#include "mutex-private.h"
 #include "table_skel.h"
 
 struct thread_args{
@@ -18,6 +19,11 @@ struct thread_args{
 };
 
 void* client_handler(void* arg);
+
+//initialize mutex-private.h variables
+pthread_mutex_t mux = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+int counter = 1;
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.
