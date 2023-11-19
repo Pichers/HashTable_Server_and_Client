@@ -71,8 +71,9 @@ int rtable_disconnect(struct rtable_t *rtable){
         printf("why are we trying to disconnect a NULL rtable?\n");
         return -1;
     }
-        
-    if(rtable->sockfd < 0){
+    
+    int s = rtable->sockfd;
+    if(s < 0){
         printf("disconnecting a negative socket? wth\n");
         return -1;
     }

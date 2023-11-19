@@ -147,8 +147,9 @@ int network_close(struct rtable_t *rtable) {
     }
 
     // Close the socket
-    if (close(rtable->sockfd) == -1) {
-        perror("Erro ao fechar a ligação");
+    int s = rtable->sockfd;
+    if (close(s) == -1) {
+        printf("Erro ao fechar a ligação");
         return -1;
     }
 
