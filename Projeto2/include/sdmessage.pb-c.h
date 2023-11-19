@@ -16,6 +16,7 @@ PROTOBUF_C__BEGIN_DECLS
 
 
 typedef struct EntryT EntryT;
+typedef struct StatsT StatsT;
 typedef struct MessageT MessageT;
 
 
@@ -59,6 +60,18 @@ struct  EntryT
     , (char *)protobuf_c_empty_string, {0,NULL} }
 
 
+struct  StatsT
+{
+  ProtobufCMessage base;
+  int32_t total_operations;
+  int32_t total_time;
+  int32_t connected_clients;
+};
+#define STATS_T__INIT \
+ { PROTOBUF_C_MESSAGE_INIT (&stats_t__descriptor) \
+    , 0, 0, 0 }
+
+
 struct  MessageT
 {
   ProtobufCMessage base;
@@ -76,10 +89,11 @@ struct  MessageT
   char **keys;
   size_t n_entries;
   EntryT **entries;
+  StatsT *stats;
 };
 #define MESSAGE_T__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&message_t__descriptor) \
-    , MESSAGE_T__OPCODE__OP_BAD, MESSAGE_T__C_TYPE__CT_BAD, NULL, (char *)protobuf_c_empty_string, {0,NULL}, 0, 0,NULL, 0,NULL }
+    , MESSAGE_T__OPCODE__OP_BAD, MESSAGE_T__C_TYPE__CT_BAD, NULL, (char *)protobuf_c_empty_string, {0,NULL}, 0, 0,NULL, 0,NULL, NULL }
 
 
 /* EntryT methods */
@@ -100,6 +114,25 @@ EntryT *
                       const uint8_t       *data);
 void   entry_t__free_unpacked
                      (EntryT *message,
+                      ProtobufCAllocator *allocator);
+/* StatsT methods */
+void   stats_t__init
+                     (StatsT         *message);
+size_t stats_t__get_packed_size
+                     (const StatsT   *message);
+size_t stats_t__pack
+                     (const StatsT   *message,
+                      uint8_t             *out);
+size_t stats_t__pack_to_buffer
+                     (const StatsT   *message,
+                      ProtobufCBuffer     *buffer);
+StatsT *
+       stats_t__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data);
+void   stats_t__free_unpacked
+                     (StatsT *message,
                       ProtobufCAllocator *allocator);
 /* MessageT methods */
 void   message_t__init
@@ -125,6 +158,9 @@ void   message_t__free_unpacked
 typedef void (*EntryT_Closure)
                  (const EntryT *message,
                   void *closure_data);
+typedef void (*StatsT_Closure)
+                 (const StatsT *message,
+                  void *closure_data);
 typedef void (*MessageT_Closure)
                  (const MessageT *message,
                   void *closure_data);
@@ -135,6 +171,7 @@ typedef void (*MessageT_Closure)
 /* --- descriptors --- */
 
 extern const ProtobufCMessageDescriptor entry_t__descriptor;
+extern const ProtobufCMessageDescriptor stats_t__descriptor;
 extern const ProtobufCMessageDescriptor message_t__descriptor;
 extern const ProtobufCEnumDescriptor    message_t__opcode__descriptor;
 extern const ProtobufCEnumDescriptor    message_t__c_type__descriptor;

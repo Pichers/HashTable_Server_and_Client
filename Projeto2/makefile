@@ -18,11 +18,11 @@ all: $(DEP_DIR) $(EXECS)
 $(DEP_DIR):
 	mkdir $(DEP_DIR)
 
-$(BIN_DIR)/table_server: $(OBJ_DIR)/table_server.o $(OBJ_DIR)/table_skel.o $(OBJ_DIR)/network_server.o $(OBJ_DIR)/sdmessage.pb-c.o $(OBJ_DIR)/table.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/list.o
+$(BIN_DIR)/table_server: $(OBJ_DIR)/table_server.o $(OBJ_DIR)/table_skel.o $(OBJ_DIR)/network_server.o $(OBJ_DIR)/sdmessage.pb-c.o $(OBJ_DIR)/table.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/list.o $(OBJ_DIR)/stats.o
 	$(CC) $^ -o $@ -lprotobuf-c 
 
 
-$(BIN_DIR)/table_client: $(OBJ_DIR)/table_client.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/client_stub.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/table.o $(OBJ_DIR)/list.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/sdmessage.pb-c.o
+$(BIN_DIR)/table_client: $(OBJ_DIR)/table_client.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/client_stub.o $(OBJ_DIR)/data.o $(OBJ_DIR)/entry.o $(OBJ_DIR)/table.o $(OBJ_DIR)/list.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/sdmessage.pb-c.o $(OBJ_DIR)/stats.o
 	$(CC) $^ -o $@ -lprotobuf-c  
 
 

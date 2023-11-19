@@ -10,6 +10,7 @@
 #include "sdmessage.pb-c.h"
 #include "network_server.h"
 #include "table_skel.h"
+#include "stats.h"
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.
@@ -32,6 +33,8 @@ int network_server_init(short port){
         printf("Erro ao configurar socket");
         return -1;
     }
+
+
 
     // Preenche estrutura server para bind
     struct sockaddr_in server;
@@ -66,7 +69,7 @@ int network_server_init(short port){
  * A função não deve retornar, a menos que ocorra algum erro. Nesse
  * caso retorna -1.
  */
-int network_main_loop(int listening_socket, struct table_t *table){
+int network_main_loop(int listening_socket, struct table_t *table, struct stats_t *stats){
 
     if(listening_socket == -1)
         return -1;
@@ -85,6 +88,7 @@ int network_main_loop(int listening_socket, struct table_t *table){
         printf("'A espera de conexão cliente\n");   
         // Bloqueia a espera de pedidos de conexão
         client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
+        connected_clients(stats, 1);
         printf("Conexão de cliente estabelecida\n");
 
         while (1) {
@@ -92,20 +96,24 @@ int network_main_loop(int listening_socket, struct table_t *table){
 
             if(msg == NULL){
                 close(client_socket);
+                connected_clients(stats, -1);
                 break;
             }
-            if(invoke(msg, table) < 0){
+            if(invoke(msg, table, stats) < 0){
                 close(client_socket);
+                connected_clients(stats, -1);
                 break;
             }
             if(network_send(client_socket, msg) == -1){
                 close(client_socket);
+                connected_clients(stats, -1);
                 break;
             }
         }
     }
 
     network_server_close(listening_socket);
+
     return -1;
 }
 

@@ -15,6 +15,7 @@ void help() {
         printf("size\n");
         printf("getkeys\n");
         printf("gettable\n");
+        printf("stats\n");
         printf("quit\n");
 }
 
