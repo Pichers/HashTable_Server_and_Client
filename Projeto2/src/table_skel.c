@@ -45,7 +45,7 @@ int handleError(MessageT* msg){
 }
 
 //aquires the lock if needed, and waits for the counter to be greater than 0
-void sync(aquire){
+void lock_sync(int aquire){
     if(aquire)
         pthread_mutex_lock(&mux);
 
@@ -88,7 +88,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             char* key = strdup(msg->key);
 
             //aquire lock
-            sync(1);
+            lock_sync(1);
 
             //critical section
             int i = table_put(table, entry->key, entry->value);
@@ -118,7 +118,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             key = msg->key;
 
             //wait for permission to read
-            sync(0);
+            lock_sync(0);
             //critical section
             struct data_t *dataValue = table_get(table, key);
 
@@ -146,7 +146,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             key = msg->key;
 
             //aquire lock
-            sync(1);
+            lock_sync(1);
             //critical section
             if(table_remove(table, key) == -1){
                 handleError(msg);
@@ -167,7 +167,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
 
 
             //wait for permission to read
-            sync(0);
+            lock_sync(0);
             //critical section
             int size = table_size(table);
 
@@ -190,7 +190,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
 
 
             //wait for permission to read
-            sync(0);
+            lock_sync(0);
             //critical section
             char** keys = table_get_keys(table);
 
@@ -249,7 +249,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
             //wait for permission to read
-            sync(0);
+            lock_sync(0);
             //critical section
             keys = table_get_keys(table);
             

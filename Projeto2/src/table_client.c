@@ -175,12 +175,12 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(token, "stats") == 0) {
             struct stats_t* stats = rtable_stats(rtable);
             if(stats == NULL){
-                printf("Erro ao obter estatisticas da tabela\n");
+                printf("Erro ao obter estatisticas do servidor\n");
             }else{
-                printf("Estatisticas da tabela: \n");
+                printf("Estatisticas do servidor: \n");
                 printf("Numero de operacoes: %d\n", stats->total_operations);
                 printf("Clientes atuais: %d\n", stats->connected_clients);
-                printf("Tempo total: %d\n", stats->total_time);
+                printf("Tempo total: %d\n\n", stats->total_time);
             }
 
         } else {
