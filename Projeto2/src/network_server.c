@@ -12,10 +12,12 @@
 #include "network_server.h"
 #include "mutex-private.h"
 #include "table_skel.h"
+#include "stats.h"
 
 struct thread_args{
     int client_socket;
     struct table_t* table;
+    struct stats_t* stats;
 };
 
 void* client_handler(void* arg);
@@ -46,6 +48,8 @@ int network_server_init(short port){
         printf("Erro ao configurar socket");
         return -1;
     }
+
+
 
     // Preenche estrutura server para bind
     struct sockaddr_in server;
@@ -80,7 +84,7 @@ int network_server_init(short port){
  * A função não deve retornar, a menos que ocorra algum erro. Nesse
  * caso retorna -1.
  */
-int network_main_loop(int listening_socket, struct table_t *table){
+int network_main_loop(int listening_socket, struct table_t *table, struct stats_t *stats){
 
     if(listening_socket == -1)
         return -1;
@@ -98,6 +102,7 @@ int network_main_loop(int listening_socket, struct table_t *table){
         printf("À espera de conexão cliente\n");   
         // Bloqueia a espera de pedidos de conexão
         client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
+        connected_clients(stats, 1);
         printf("Conexão de cliente estabelecida\n");
 
         pthread_t thr;
@@ -109,11 +114,13 @@ int network_main_loop(int listening_socket, struct table_t *table){
         }
         targs->client_socket = client_socket;
         targs->table = table;
+        targs->stats = stats;
 
         pthread_create(&thr, NULL, &client_handler, targs);
         pthread_detach(thr);
     }
     //fechar as threads?
+    //////////////////////////////////////////////////////////////////
     network_server_close(listening_socket);
     return -1;
 }
@@ -121,26 +128,32 @@ int network_main_loop(int listening_socket, struct table_t *table){
 void* client_handler(void* arg){
     int client_socket;
     struct table_t* table;
+    struct stats_t* stats;
     struct thread_args *args;
+
 
     while (1) {
         args = (struct thread_args *) arg;
 
         client_socket = args->client_socket;
         table = args->table;
+        stats = args->stats;
 
         MessageT* msg = network_receive(client_socket);
 
         if(msg == NULL){
             close(client_socket);
+            connected_clients(stats, -1);
             break;
         }
-        if(invoke(msg, table) < 0){
+        if(invoke(msg, table, stats) < 0){
             close(client_socket);
+            connected_clients(stats, -1);
             break;
         }
         if(network_send(client_socket, msg) == -1){
             close(client_socket);
+            connected_clients(stats, -1);
             break;
         }
     }

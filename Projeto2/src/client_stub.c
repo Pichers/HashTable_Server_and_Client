@@ -3,6 +3,7 @@
 #include "client_stub-private.h"
 #include "sdmessage.pb-c.h"
 #include "network_client.h"
+#include "stats.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -352,4 +353,34 @@ void rtable_free_entries(struct entry_t **entries){
     
     free(entries);
     return;
+}
+
+struct stats_t *rtable_stats(struct rtable_t *rtable){
+    if(rtable == NULL)
+        return NULL;
+    
+    MessageT msg = MESSAGE_T__INIT;
+
+    msg.opcode = MESSAGE_T__OPCODE__OP_STATS;
+    msg.c_type = MESSAGE_T__C_TYPE__CT_STATS;
+
+    MessageT* ret = network_send_receive(rtable, &msg);
+    if(ret == NULL){
+        printf("Error sending message\n");
+        return NULL;
+    }
+
+
+    struct stats_t* stats = malloc(sizeof(struct stats_t));
+    if(stats == NULL){
+        printf("Error allocating memory for stats\n");
+        message_t__free_unpacked(ret, NULL);
+        return NULL;
+    }
+    stats->total_operations = ret->stats->total_operations;
+    stats->total_time = ret->stats->total_time;
+    stats->connected_clients = ret->stats->connected_clients;
+
+    message_t__free_unpacked(ret, NULL);
+    return stats;
 }

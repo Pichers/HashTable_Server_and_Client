@@ -5,6 +5,7 @@
 
 #include "table_skel.h"
 #include "network_server.h"
+#include "stats.h"
 
 int main(int argc, char const *argv[]){
 
@@ -35,9 +36,11 @@ int main(int argc, char const *argv[]){
         printf("Error binding to port");
         exit(1);
     }
+    struct stats_t state = stats_t_init();
+    struct stats_t *state_ptr = &state;
 
     //chamar o main_loop
-    int loopI = network_main_loop(skt, table);
+    int loopI = network_main_loop(skt, table, state_ptr);
     if(loopI == -1){
         printf("Error in main loop");
         exit(1);

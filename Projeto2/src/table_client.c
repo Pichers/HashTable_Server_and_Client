@@ -4,6 +4,7 @@
 #include <signal.h>
 
 #include "client_stub.h"
+#include "stats.h"
 
 
 void help() {
@@ -14,6 +15,7 @@ void help() {
         printf("size\n");
         printf("getkeys\n");
         printf("gettable\n");
+        printf("stats\n");
         printf("quit\n");
 }
 
@@ -81,7 +83,6 @@ int main(int argc, char *argv[]) {
             if (key == NULL) {
                 printf("Comando get requer <key>\n\n");
             } else {
-
                 struct data_t* data = rtable_get(rtable, key);
                 if (data == NULL) {
                     printf("Elemento nao encontrado, ou erro ao obte-lo\n\n");
@@ -123,7 +124,6 @@ int main(int argc, char *argv[]) {
             }
 
         } else if (strcmp(token, "getkeys") == 0) {
-
             char** keys = rtable_get_keys(rtable);
 
             if(keys == NULL){
@@ -139,7 +139,6 @@ int main(int argc, char *argv[]) {
                 rtable_free_keys(keys);
             }
         } else if (strcmp(token, "gettable") == 0) {
-
             struct entry_t** entries = rtable_get_table(rtable);
 
             if(entries == NULL){
@@ -173,6 +172,17 @@ int main(int argc, char *argv[]) {
             }
             printf("Bye bye client\n");
             break;
+        } else if (strcmp(token, "stats") == 0) {
+            struct stats_t* stats = rtable_stats(rtable);
+            if(stats == NULL){
+                printf("Erro ao obter estatisticas da tabela\n");
+            }else{
+                printf("Estatisticas da tabela: \n");
+                printf("Numero de operacoes: %d\n", stats->total_operations);
+                printf("Clientes atuais: %d\n", stats->connected_clients);
+                printf("Tempo total: %d\n", stats->total_time);
+            }
+
         } else {
             help();
         }

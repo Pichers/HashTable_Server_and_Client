@@ -8,6 +8,7 @@
 #include "entry.h"
 #include "table.h"
 #include "sdmessage.pb-c.h"
+#include "stats.h"
 #include "mutex-private.h"
 
 /* Inicia o skeleton da tabela.
@@ -67,7 +68,8 @@ void release(){
  * e utiliza a mesma estrutura MessageT para devolver o resultado.
  * Retorna 0 (OK) ou -1 em caso de erro.
 */
-int invoke(MessageT *msg, struct table_t *table){
+int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
+    struct timeval start_time, end_time;
 
     if(table == NULL || msg == NULL)
         handleError(msg);
@@ -76,7 +78,9 @@ int invoke(MessageT *msg, struct table_t *table){
 
     switch((int) opCode) {
         case (int) MESSAGE_T__OPCODE__OP_PUT:
-            
+
+            gettimeofday(&start_time, NULL);
+
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
             struct data_t* data = data_create(msg->entry->value.len, msg->entry->value.data);
@@ -89,6 +93,10 @@ int invoke(MessageT *msg, struct table_t *table){
             //critical section
             int i = table_put(table, entry->key, entry->value);
 
+            increment_operations(stats); 
+            gettimeofday(&end_time, NULL);
+            update_time(stats, start_time, end_time);
+
             release();
             //lock released
 
@@ -98,10 +106,12 @@ int invoke(MessageT *msg, struct table_t *table){
                 handleError(msg);
             }
             free(data);
-            entry_destroy(entry);  
+            entry_destroy(entry); 
+            
             break;
         case (int) MESSAGE_T__OPCODE__OP_GET:
 
+            gettimeofday(&start_time, NULL);
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_VALUE;
 
@@ -122,10 +132,14 @@ int invoke(MessageT *msg, struct table_t *table){
 
                 free(dataValue);
             }
-
+            //nao tem syncronização
+            increment_operations(stats); 
+            gettimeofday(&end_time, NULL);
+            update_time(stats, start_time, end_time);
+            ////////////////////////////////
             break;
         case (int) MESSAGE_T__OPCODE__OP_DEL:
-            
+            gettimeofday(&start_time, NULL);
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
@@ -137,6 +151,9 @@ int invoke(MessageT *msg, struct table_t *table){
             if(table_remove(table, key) == -1){
                 handleError(msg);
             }
+            increment_operations(stats);   
+            gettimeofday(&end_time, NULL);
+            update_time(stats, start_time, end_time);
 
             release();
             //lock released
@@ -144,6 +161,7 @@ int invoke(MessageT *msg, struct table_t *table){
             break;
         case (int) MESSAGE_T__OPCODE__OP_SIZE:
             
+            gettimeofday(&start_time, NULL);
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
 
@@ -157,10 +175,16 @@ int invoke(MessageT *msg, struct table_t *table){
                 handleError(msg);
             }
             msg->result = size;
-
+            
+            //nao tem sincronização
+            increment_operations(stats); 
+            gettimeofday(&end_time, NULL);
+            update_time(stats, start_time, end_time);
+            ////////////////////////////////
             break;
         case (int) MESSAGE_T__OPCODE__OP_GETKEYS:
             
+            gettimeofday(&start_time, NULL);
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
@@ -182,10 +206,45 @@ int invoke(MessageT *msg, struct table_t *table){
                 msg->keys = malloc(j * sizeof(char*));
                 msg->keys = keys;
             }
+            //add lock
+            increment_operations(stats); 
+            gettimeofday(&end_time, NULL);
+            update_time(stats, start_time, end_time);
+            //
 
             break;
+
+        case (int) MESSAGE_T__OPCODE__OP_STATS:
+            gettimeofday(&start_time, NULL);
+            msg->opcode++;
+            msg->c_type = MESSAGE_T__C_TYPE__CT_STATS;
+            if(stats == NULL){
+                return handleError(msg);
+            }
+
+
+            StatsT* stats_msg;
+            stats_msg = malloc(sizeof(StatsT));
+            stats_t__init(stats_msg);
+
+            //nao trata de concorrencia
+            gettimeofday(&end_time, NULL);
+            update_time(stats, start_time, end_time);
+
+            
+            stats_msg->total_operations = stats->total_operations;
+            stats_msg->total_time = stats->total_time;
+            stats_msg->connected_clients = stats->connected_clients;
+
+            msg->stats = stats_msg;
+            
+            // increment_operations(stats); STATS NAO AUMENTA
+
+            break;
+
         case (int) MESSAGE_T__OPCODE__OP_GETTABLE:
             
+            gettimeofday(&start_time, NULL);
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
@@ -239,6 +298,11 @@ int invoke(MessageT *msg, struct table_t *table){
             EntryT** msg_entries = (EntryT**) entries;
             msg->entries = msg_entries;
 
+            //falta locks também
+            increment_operations(stats); 
+            gettimeofday(&end_time, NULL);
+            update_time(stats, start_time, end_time);
+            
             break;
         default: // Case BAD || ERROR
             return handleError(msg);
