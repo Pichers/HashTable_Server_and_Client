@@ -117,12 +117,12 @@ int network_main_loop(int listening_socket, struct table_t *table, struct stats_
         targs->stats = stats;
 
         pthread_create(&thr, NULL, &client_handler, targs);
-        free(targs);
         pthread_detach(thr);
     }
     //fechar as threads?
     //////////////////////////////////////////////////////////////////
     network_server_close(listening_socket);
+
     return -1;
 }
 

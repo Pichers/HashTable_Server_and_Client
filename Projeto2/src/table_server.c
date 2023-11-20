@@ -34,6 +34,7 @@ int main(int argc, char const *argv[]){
     int skt = network_server_init(port);
     if(skt == -1){
         printf("Error binding to port");
+        table_destroy(table);
         exit(1);
     }
     struct stats_t state = stats_t_init();
@@ -42,12 +43,14 @@ int main(int argc, char const *argv[]){
     //chamar o main_loop
     int loopI = network_main_loop(skt, table, state_ptr);
     if(loopI == -1){
+        table_destroy(table);
         printf("Error in main loop");
         exit(1);
     }
 
     int closeI = network_server_close(skt);
     if(closeI == -1){
+        table_destroy(table);
         printf("Error closing socket");
         exit(1);
     }
