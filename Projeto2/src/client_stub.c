@@ -150,10 +150,13 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key){
 
     MessageT* ret = network_send_receive(rtable, &msg);
     if(ret  == NULL){
+        free(msg.key);
         printf("Error sending message\n");
         return NULL;
     }  
     if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+        free(msg.key);
+        message_t__free_unpacked(ret, NULL);
         return NULL;
     } 
 
@@ -193,12 +196,18 @@ int rtable_del(struct rtable_t *rtable, char *key){
     msg.key = strdup(key);
     MessageT* ret = network_send_receive(rtable, &msg);
     free(msg.key);
+    
     if(ret == NULL){
         printf("Error sending message\n");
         return -1;
     }
+    if(ret->opcode == MESSAGE_T__OPCODE__OP_BAD){
+        message_t__free_unpacked(ret, NULL);
+        return -1;
+    }
     // printf("opcode == error: %d\n", (ret->opcode == MESSAGE_T__OPCODE__OP_ERROR));
     if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+        message_t__free_unpacked(ret, NULL);
         return -1;
     }
     message_t__free_unpacked(ret, NULL);
@@ -252,6 +261,7 @@ char **rtable_get_keys(struct rtable_t *rtable){
         return NULL;
     }
     if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+        message_t__free_unpacked(ret, NULL);
         return NULL;
     }
     char** retKeys = ret->keys;

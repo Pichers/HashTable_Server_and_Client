@@ -95,9 +95,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
         free(bufW);
         return NULL;
     }
-
     free(bufW);
-
 
     //receive short
     short response_size_short;
@@ -134,6 +132,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
     response = message_t__unpack(NULL, response_size, bufR);
     
     free(bufR);
+    
     return response;
 }
 

@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
                 printf("Erro ao obter chaves da tabela\n\n");
             }else if(keys[0] == NULL){
                 printf("Tabela vazia\n\n");
+                rtable_free_keys(keys);
             }else{
                 printf("Chaves da tabela: \n");
                 for (int i = 0; keys[i] != NULL; i++){
@@ -145,6 +146,7 @@ int main(int argc, char *argv[]) {
                 printf("Erro ao obter tabela\n\n");
             }else if(entries[0] == NULL){
                 printf("Tabela vazia\n\n");
+                rtable_free_entries(entries);
             }else{
                 printf("Tabela: \n");
                 for (int i = 0; entries[i] != NULL; i++){
@@ -174,6 +176,8 @@ int main(int argc, char *argv[]) {
                 printf("Numero de operacoes: %d\n", stats->total_operations);
                 printf("Clientes atuais: %d\n", stats->connected_clients);
                 printf("Tempo total: %d\n\n", stats->total_time);
+                
+                free(stats);
             }
 
         } else if (strcmp(token, "quit") == 0) {

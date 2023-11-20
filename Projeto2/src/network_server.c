@@ -23,9 +23,38 @@ struct thread_args{
 void* client_handler(void* arg);
 
 //initialize mutex-private.h variables
-pthread_mutex_t mux = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-int counter = 1;
+pthread_mutex_t table_mux = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t table_cond = PTHREAD_COND_INITIALIZER;
+int table_counter = 1;
+
+pthread_mutex_t stats_mux = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t stats_cond = PTHREAD_COND_INITIALIZER;
+int stats_counter = 1;
+
+//aquires the stats lock, and waits for cond
+void aquire_stats_lock(){
+    pthread_mutex_lock(&stats_mux);
+    while(stats_counter <= 0)
+        pthread_cond_wait(&stats_cond, &stats_mux);
+    stats_counter--;
+}
+
+//releases the stats lock, and signals cond
+void release_stats_lock(){
+    stats_counter++;
+    pthread_cond_signal(&stats_cond);
+    pthread_mutex_unlock(&stats_mux);
+}
+
+//handles synchronization and changes the number of connected clients according to change
+void change_connected(int change, struct stats_t* stats){
+    //aquire stats lock
+    aquire_stats_lock();
+    //critical section
+    connected_clients(stats, change);
+    //release stats lock
+    release_stats_lock();
+}
 
 /* Função para preparar um socket de receção de pedidos de ligação
  * num determinado porto.
@@ -48,8 +77,6 @@ int network_server_init(short port){
         printf("Erro ao configurar socket");
         return -1;
     }
-
-
 
     // Preenche estrutura server para bind
     struct sockaddr_in server;
@@ -102,7 +129,9 @@ int network_main_loop(int listening_socket, struct table_t *table, struct stats_
         printf("À espera de conexão cliente\n");   
         // Bloqueia a espera de pedidos de conexão
         client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
-        connected_clients(stats, 1);
+
+        change_connected(1, stats);
+
         printf("Conexão de cliente estabelecida\n");
 
         pthread_t thr;
@@ -119,8 +148,7 @@ int network_main_loop(int listening_socket, struct table_t *table, struct stats_
         pthread_create(&thr, NULL, &client_handler, targs);
         pthread_detach(thr);
     }
-    //fechar as threads?
-    //////////////////////////////////////////////////////////////////
+
     network_server_close(listening_socket);
     return -1;
 }
@@ -143,25 +171,26 @@ void* client_handler(void* arg){
 
         if(msg == NULL){
             close(client_socket);
-            connected_clients(stats, -1);
             break;
         }
         if(invoke(msg, table, stats) < 0){
             close(client_socket);
-            connected_clients(stats, -1);
             break;
         }
         if(network_send(client_socket, msg) == -1){
             close(client_socket);
-            connected_clients(stats, -1);
             break;
         }
     }
+    change_connected(-1, stats);
+    
     printf("Conexão com o cliente encerrada. Socket: %d\n", client_socket);
     fflush(stdout);
 
     close(client_socket);
     free(args);
+
+    pthread_exit(NULL);
     return NULL;
 }
 
@@ -192,9 +221,9 @@ MessageT *network_receive(int client_socket){
         return NULL;
     } else {
         msg = message_t__unpack(NULL, msg_size2, response_buffer);
-        // if (msg == NULL) {
-        //     fprintf(stderr, "Error unpacking the request message.\n");
-        // }
+        if (msg == NULL) {
+            fprintf(stderr, "Error unpacking the request message.\n");
+        }
     }
     free(response_buffer);
     return msg;
@@ -213,7 +242,6 @@ int network_send(int client_socket, MessageT *msg){
 
 
     size_t msg_size = message_t__get_packed_size(msg);
-    // size_t msg_size_short = msg_size;
     uint16_t msg_size_network = htons((uint16_t)msg_size);
 
     uint8_t *buffer = (uint8_t *)malloc(msg_size);
