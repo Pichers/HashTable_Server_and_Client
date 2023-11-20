@@ -45,22 +45,35 @@ int handleError(MessageT* msg){
 }
 
 //aquires the lock if needed, and waits for the counter to be greater than 0
-void lock_sync(int aquire){
-    if(aquire)
-        pthread_mutex_lock(&mux);
-
-    while(counter <= 0){
-        pthread_cond_wait(&cond, &mux);
+void lock_sync(int table, int aquire){
+    if(table){
+        if(aquire)
+            pthread_mutex_lock(&table_mux);
+        while(table_counter <= 0)
+            pthread_cond_wait(&table_cond, &table_mux);
+        if(aquire)
+            table_counter--;
+    } else {
+        if(aquire)
+            pthread_mutex_lock(&stats_mux);
+        while(stats_counter <= 0)
+            pthread_cond_wait(&stats_cond, &stats_mux);
+        if(aquire)
+            stats_counter--;
     }
-    if(aquire)
-        counter--;
 }
 
 //releases the lock
-void release(){
-    counter++;
-    pthread_cond_signal(&cond);
-    pthread_mutex_unlock(&mux);
+void release(int table){
+    if(table){
+        table_counter++;
+        pthread_cond_signal(&table_cond);
+        pthread_mutex_unlock(&table_mux);
+    } else {
+        stats_counter++;
+        pthread_cond_signal(&stats_cond);
+        pthread_mutex_unlock(&stats_mux);
+    }
 }
 
 
@@ -87,22 +100,24 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             struct entry_t* entry = entry_create(strdup(msg->entry->key), data_dup(data));
             char* key = strdup(msg->key);
 
-            //aquire lock
-            lock_sync(1);
-
+            //aquire table lock
+            lock_sync(1, 1);
             //critical section
             int i = table_put(table, entry->key, entry->value);
+            printf("%d \n\n", i);
+            //release table lock
+            release(1);
 
-            increment_operations(stats); 
             gettimeofday(&end_time, NULL);
+            //aquire stats lock
+            lock_sync(0, 1);
+            //critical section
+            increment_operations(stats); 
             update_time(stats, start_time, end_time);
-
-            release();
-            //lock released
+            //release stats lock
+            release(0);
 
             if(i == -1){
-                free(data);
-                entry_destroy(entry);
                 handleError(msg);
             }
             free(data);
@@ -117,10 +132,17 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
 
             key = msg->key;
 
-            //wait for permission to read
-            lock_sync(0);
+            //wait for table permission to read
+            lock_sync(1, 0);
             //critical section
             struct data_t *dataValue = table_get(table, key);
+
+            gettimeofday(&end_time, NULL);
+            //aquire stats lock
+            increment_operations(stats); 
+            update_time(stats, start_time, end_time);
+            //release stats lock
+            release(0);
 
             if(dataValue == NULL){
                 printf("Erro ao obter elemento da tabela\n");
@@ -132,11 +154,6 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
 
                 free(dataValue);
             }
-            //nao tem syncronização
-            increment_operations(stats); 
-            gettimeofday(&end_time, NULL);
-            update_time(stats, start_time, end_time);
-            ////////////////////////////////
             break;
         case (int) MESSAGE_T__OPCODE__OP_DEL:
             gettimeofday(&start_time, NULL);
@@ -145,18 +162,29 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
 
             key = msg->key;
 
-            //aquire lock
-            lock_sync(1);
+            //aquire table lock
+            lock_sync(1, 1);
             //critical section
-            if(table_remove(table, key) == -1){
+
+            int tr = table_remove(table, key);
+            if(tr == -1){
                 handleError(msg);
             }
-            increment_operations(stats);   
-            gettimeofday(&end_time, NULL);
-            update_time(stats, start_time, end_time);
+            if(tr == 1){
+                msg->opcode = MESSAGE_T__OPCODE__OP_BAD;
+                msg->c_type = MESSAGE_T__C_TYPE__CT_NONE;
+            }
+            //release table lock
+            release(1);
 
-            release();
-            //lock released
+            gettimeofday(&end_time, NULL);
+            //aquire stats lock
+            lock_sync(0, 1);
+            //critical section
+            increment_operations(stats);   
+            update_time(stats, start_time, end_time);
+            //release stats lock
+            release(0);
 
             break;
         case (int) MESSAGE_T__OPCODE__OP_SIZE:
@@ -166,21 +194,25 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             msg->c_type = MESSAGE_T__C_TYPE__CT_RESULT;
 
 
-            //wait for permission to read
-            lock_sync(0);
+            //wait for table permission to read
+            lock_sync(1, 0);
             //critical section
             int size = table_size(table);
+
+            gettimeofday(&end_time, NULL);
+            //aquire stats lock
+            lock_sync(0, 1);
+            //critical section
+            increment_operations(stats);   
+            update_time(stats, start_time, end_time);
+            //release stats lock
+            release(0);
 
             if(size == -1){
                 handleError(msg);
             }
             msg->result = size;
             
-            //nao tem sincronização
-            increment_operations(stats); 
-            gettimeofday(&end_time, NULL);
-            update_time(stats, start_time, end_time);
-            ////////////////////////////////
             break;
         case (int) MESSAGE_T__OPCODE__OP_GETKEYS:
             
@@ -189,10 +221,19 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
 
-            //wait for permission to read
-            lock_sync(0);
+            //wait for table permission to read
+            lock_sync(1, 0);
             //critical section
             char** keys = table_get_keys(table);
+
+            gettimeofday(&end_time, NULL);
+            //aquire stats lock
+            lock_sync(0, 1);
+            //critical section
+            increment_operations(stats);   
+            update_time(stats, start_time, end_time);
+            //release stats lock
+            release(0);
 
             if(keys == NULL){
                 handleError(msg);
@@ -206,39 +247,29 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
                 msg->keys = malloc(j * sizeof(char*));
                 msg->keys = keys;
             }
-            //add lock
-            increment_operations(stats); 
-            gettimeofday(&end_time, NULL);
-            update_time(stats, start_time, end_time);
-            //
 
             break;
 
         case (int) MESSAGE_T__OPCODE__OP_STATS:
-            gettimeofday(&start_time, NULL);
+
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_STATS;
             if(stats == NULL){
                 return handleError(msg);
             }
 
-
             StatsT* stats_msg;
             stats_msg = malloc(sizeof(StatsT));
             stats_t__init(stats_msg);
-
-            //nao trata de concorrencia
-            gettimeofday(&end_time, NULL);
-            update_time(stats, start_time, end_time);
-
             
+            //wait for stats permission to read
+            lock_sync(0, 0);
+            //critical section
             stats_msg->total_operations = stats->total_operations;
             stats_msg->total_time = stats->total_time;
             stats_msg->connected_clients = stats->connected_clients;
 
             msg->stats = stats_msg;
-            free(stats_msg);
-            // increment_operations(stats); STATS NAO AUMENTA
 
             break;
 
@@ -248,10 +279,19 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             msg->opcode++;
             msg->c_type = MESSAGE_T__C_TYPE__CT_KEYS;
 
-            //wait for permission to read
-            lock_sync(0);
+            //wait for table permission to read
+            lock_sync(1, 0);
             //critical section
             keys = table_get_keys(table);
+
+            gettimeofday(&end_time, NULL);
+            //aquire stats lock
+            lock_sync(0, 1);
+            //critical section
+            increment_operations(stats);   
+            update_time(stats, start_time, end_time);
+            //release stats lock
+            release(0);
             
             if(keys == NULL){
                 handleError(msg);
@@ -297,11 +337,6 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             msg->n_entries = nKeys;
             EntryT** msg_entries = (EntryT**) entries;
             msg->entries = msg_entries;
-
-            //falta locks também
-            increment_operations(stats); 
-            gettimeofday(&end_time, NULL);
-            update_time(stats, start_time, end_time);
             
             break;
         default: // Case BAD || ERROR

@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
                 printf("Erro ao obter chaves da tabela\n\n");
             }else if(keys[0] == NULL){
                 printf("Tabela vazia\n\n");
+                rtable_free_keys(keys);
             }else{
                 printf("Chaves da tabela: \n");
                 for (int i = 0; keys[i] != NULL; i++){
@@ -145,6 +146,7 @@ int main(int argc, char *argv[]) {
                 printf("Erro ao obter tabela\n\n");
             }else if(entries[0] == NULL){
                 printf("Tabela vazia\n\n");
+                rtable_free_entries(entries);
             }else{
                 printf("Tabela: \n");
                 for (int i = 0; entries[i] != NULL; i++){
@@ -165,13 +167,6 @@ int main(int argc, char *argv[]) {
                 rtable_free_entries(entries);
             }
             
-        } else if (strcmp(token, "quit") == 0) {
-
-            if(rtable_disconnect(rtable) == -1){
-                printf("Erro ao desconectar do servidor\n\n");
-            }
-            printf("Bye bye client\n");
-            break;
         } else if (strcmp(token, "stats") == 0) {
             struct stats_t* stats = rtable_stats(rtable);
             if(stats == NULL){
@@ -181,13 +176,22 @@ int main(int argc, char *argv[]) {
                 printf("Numero de operacoes: %d\n", stats->total_operations);
                 printf("Clientes atuais: %d\n", stats->connected_clients);
                 printf("Tempo total: %d\n\n", stats->total_time);
+                
+                free(stats);
             }
 
+        } else if (strcmp(token, "quit") == 0) {
+
+            int a = rtable_disconnect(rtable);
+            if(a == -1){
+                printf("Erro ao desconectar do servidor\n\n");
+            }
+            printf("Bye bye client\n");
+            break;
         } else {
             help();
         }
     }
-    rtable_disconnect(rtable);
     exit(0);
     return 0;
 }

@@ -95,9 +95,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
         free(bufW);
         return NULL;
     }
-
     free(bufW);
-
 
     //receive short
     short response_size_short;
@@ -134,6 +132,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg){
     response = message_t__unpack(NULL, response_size, bufR);
     
     free(bufR);
+    
     return response;
 }
 
@@ -147,8 +146,9 @@ int network_close(struct rtable_t *rtable) {
     }
 
     // Close the socket
-    if (close(rtable->sockfd) == -1) {
-        perror("Erro ao fechar a ligação");
+    int s = rtable->sockfd;
+    if (close(s) == -1) {
+        printf("Erro ao fechar a ligação");
         return -1;
     }
 
