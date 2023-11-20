@@ -89,6 +89,8 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
 
     MessageT__Opcode opCode = msg->opcode;
 
+    char** keys;
+
     switch((int) opCode) {
         case (int) MESSAGE_T__OPCODE__OP_PUT:
 
@@ -224,7 +226,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             //wait for table permission to read
             lock_sync(1, 0);
             //critical section
-            char** keys = table_get_keys(table);
+            keys = table_get_keys(table);
 
             gettimeofday(&end_time, NULL);
             //aquire stats lock
@@ -244,7 +246,6 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
                 }                      
 
                 msg->n_keys = j; 
-                msg->keys = malloc(j * sizeof(char*));
                 msg->keys = keys;
             }
 
@@ -303,7 +304,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
                 nKeys++;
             }
             msg->n_entries = nKeys;
-            msg->entries = (EntryT **) malloc((nKeys+1) * sizeof(struct EntryT *));
+            // msg->entries = (EntryT **) malloc((nKeys+1) * sizeof(struct EntryT *));
 
             EntryT** entries = malloc((nKeys) * sizeof(EntryT));
             
@@ -317,7 +318,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
                 entry_t__init(entry_temp);
 
                 char* key = keys[j];
-                struct data_t* data = data_dup(table_get(table, keys[j]));
+                struct data_t* data = table_get(table, keys[j]);
                 if(data == NULL){
                     handleError(msg);
                 }
@@ -332,7 +333,11 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
                 entry_temp->value.data = data->data;
 
                 entries[j] = entry_temp;
+
+                data_destroy(data);
             }
+
+            table_free_keys(keys);
 
             msg->n_entries = nKeys;
             EntryT** msg_entries = (EntryT**) entries;
