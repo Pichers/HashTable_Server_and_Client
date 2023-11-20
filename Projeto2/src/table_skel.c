@@ -334,8 +334,8 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
                 entry_temp->value.data = data->data;
 
                 entries[j] = entry_temp;
-
-                data_destroy(data);
+                
+                free(data);
             }
 
             table_free_keys(keys);

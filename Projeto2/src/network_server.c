@@ -254,7 +254,7 @@ int network_send(int client_socket, MessageT *msg){
     size_t msg_size = message_t__get_packed_size(msg);
     uint16_t msg_size_network = htons((uint16_t)msg_size);
 
-    uint8_t *buffer = (uint8_t *)malloc(msg_size);
+    uint8_t *buffer = (uint8_t *) malloc(msg_size);
     message_t__pack(msg, (uint8_t*)buffer);
 
 

@@ -7,6 +7,15 @@
 #include "network_server.h"
 #include "stats.h"
 
+int skt;
+struct table_t* table;
+
+void server_shutdown(){
+    network_server_close(skt);
+    table_skel_destroy(table);
+    exit(0);
+}
+
 int main(int argc, char const *argv[]){
 
     if (argc != 3) {
@@ -14,27 +23,28 @@ int main(int argc, char const *argv[]){
         exit(1);
     }
 
-    // if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-    //     perror("Error setting up signal handler");
-    //     return -1;
-    // }
+    if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+        perror("Error setting up signal handler");
+        return -1;
+    }
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, server_shutdown);
 
     int port = atoi(argv[1]);
     int n_lists = atoi(argv[2]);
 
     //iniciar a tabela com n_lists listas
-    struct table_t* table = table_skel_init(n_lists);
+    table = table_skel_init(n_lists);
     if (table == NULL) {
         printf("Error creating table");
         exit(1);
     }
 
     //inicializar/associar ao socket
-    int skt = network_server_init(port);
+    skt = network_server_init(port);
     if(skt == -1){
         printf("Error binding to port");
-        table_destroy(table);
+        table_skel_destroy(table);
         exit(1);
     }
     struct stats_t state = stats_t_init();
@@ -43,14 +53,14 @@ int main(int argc, char const *argv[]){
     //chamar o main_loop
     int loopI = network_main_loop(skt, table, state_ptr);
     if(loopI == -1){
-        table_destroy(table);
+        table_skel_destroy(table);
         printf("Error in main loop");
         exit(1);
     }
 
     int closeI = network_server_close(skt);
     if(closeI == -1){
-        table_destroy(table);
+        table_skel_destroy(table);
         printf("Error closing socket");
         exit(1);
     }
