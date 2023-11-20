@@ -304,7 +304,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
                 nKeys++;
             }
             msg->n_entries = nKeys;
-            // msg->entries = (EntryT **) malloc((nKeys+1) * sizeof(struct EntryT *));
+            msg->entries = (EntryT **) malloc((nKeys+1) * sizeof(struct EntryT *));
 
             EntryT** entries = malloc((nKeys) * sizeof(EntryT));
             
