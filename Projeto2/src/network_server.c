@@ -117,6 +117,7 @@ int network_main_loop(int listening_socket, struct table_t *table, struct stats_
         targs->stats = stats;
 
         pthread_create(&thr, NULL, &client_handler, targs);
+        free(targs);
         pthread_detach(thr);
     }
     //fechar as threads?
@@ -149,13 +150,16 @@ void* client_handler(void* arg){
         if(invoke(msg, table, stats) < 0){
             close(client_socket);
             connected_clients(stats, -1);
+            message_t__free_unpacked(msg, NULL);
             break;
         }
         if(network_send(client_socket, msg) == -1){
             close(client_socket);
             connected_clients(stats, -1);
+            message_t__free_unpacked(msg, NULL);
             break;
         }
+        message_t__free_unpacked(msg, NULL);
     }
     printf("Conexão com o cliente encerrada. Socket: %d\n", client_socket);
     fflush(stdout);
@@ -192,9 +196,12 @@ MessageT *network_receive(int client_socket){
         return NULL;
     } else {
         msg = message_t__unpack(NULL, msg_size2, response_buffer);
-        // if (msg == NULL) {
-        //     fprintf(stderr, "Error unpacking the request message.\n");
-        // }
+        if (msg == NULL) {
+            fprintf(stderr, "Error unpacking the request message.\n");
+            message_t__free_unpacked(msg, NULL);
+            free(response_buffer);
+            return NULL;
+        }
     }
     free(response_buffer);
     return msg;

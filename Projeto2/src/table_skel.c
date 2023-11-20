@@ -107,7 +107,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             }
             free(data);
             entry_destroy(entry); 
-            
+            free(key);
             break;
         case (int) MESSAGE_T__OPCODE__OP_GET:
 
@@ -237,7 +237,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             stats_msg->connected_clients = stats->connected_clients;
 
             msg->stats = stats_msg;
-            
+            free(stats_msg);
             // increment_operations(stats); STATS NAO AUMENTA
 
             break;
