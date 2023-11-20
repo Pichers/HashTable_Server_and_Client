@@ -304,7 +304,8 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
                 nKeys++;
             }
             msg->n_entries = nKeys;
-            msg->entries = (EntryT **) malloc((nKeys+1) * sizeof(struct EntryT *));
+            EntryT ** temp_Entries = malloc((nKeys+1) * sizeof(struct EntryT *));
+            msg->entries = temp_Entries;
 
             EntryT** entries = malloc((nKeys) * sizeof(EntryT));
             
@@ -342,7 +343,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             msg->n_entries = nKeys;
             EntryT** msg_entries = (EntryT**) entries;
             msg->entries = msg_entries;
-            
+            free(temp_Entries);
             break;
         default: // Case BAD || ERROR
             return handleError(msg);

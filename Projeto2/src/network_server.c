@@ -124,6 +124,7 @@ int network_main_loop(int listening_socket, struct table_t *table, struct stats_
     socklen_t size_client = sizeof(client);
     
     printf("Servidor pronto\n");
+    fflush(stdout);
 
     while(1){ 
         printf("À espera de conexão cliente\n");   
