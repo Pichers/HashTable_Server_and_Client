@@ -201,16 +201,32 @@ void* client_handler(void* arg){
     return NULL;
 }
 
+ssize_t receive_all(int socket, void *buffer, size_t length, int flags) {
+    size_t total = 0;  // Total bytes received
+    ssize_t n;
+
+    while (total < length) {
+        n = recv(socket, (char *)buffer + total, length - total, flags);
+        if (n <= 0) {
+            // Handle error or connection closed by peer
+            return n;
+        }
+        total += n;
+    }
+
+    return total;
+}
+
 /* A função network_receive() deve:
  * - Ler os bytes da rede, a partir do client_socket indicado;
  * - De-serializar estes bytes e construir a mensagem com o pedido,
  *   reservando a memória necessária para a estrutura MessageT.
  * Retorna a mensagem com o pedido ou NULL em caso de erro.
  */
-MessageT *network_receive(int client_socket){
+MessageT *network_receive(int client_socket) {
     MessageT *msg;
 
-    /* Receber um short indicando a dimensão do buffer onde será recebida a resposta; */
+    // Receive short
     uint16_t msg_size;
     ssize_t nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
     if (nbytes != sizeof(uint16_t) && nbytes != 0) {
@@ -219,24 +235,46 @@ MessageT *network_receive(int client_socket){
     }
     int msg_size2 = ntohs(msg_size);
 
-    /* Receber a resposta colocando-a num buffer de dimensão apropriada; */
+    // Receive message
     uint8_t *response_buffer = (uint8_t *)malloc(msg_size2);
-    nbytes = recv(client_socket, response_buffer, msg_size2, 0);
-    if (nbytes < 0) {
+    if (receive_all(client_socket, response_buffer, msg_size2, 0) <= 0) {
         printf("Error receiving response from the server\n");
         free(response_buffer);
         return NULL;
-    } else {
-        msg = message_t__unpack(NULL, msg_size2, response_buffer);
-        if (msg == NULL) {
-            fprintf(stderr, "Error unpacking the request message.\n");
-            message_t__free_unpacked(msg, NULL);
-            free(response_buffer);
-            return NULL;
-        }
     }
+
+    // Unpack the received message
+    msg = message_t__unpack(NULL, msg_size2, response_buffer);
+    if (msg == NULL) {
+        fprintf(stderr, "Error unpacking the request message.\n");
+        message_t__free_unpacked(msg, NULL);
+        free(response_buffer);
+        return NULL;
+    }
+
     free(response_buffer);
     return msg;
+}
+
+ssize_t send_all(int socket, const void *buffer, size_t length, int flags) {
+    size_t total = 0;  // Total bytes sent
+    ssize_t n;
+
+    while (total < length) {
+        n = send(socket, (char *)buffer + total, length - total, flags);
+        if (n == -1) {
+            // Handle error, e.g., print an error message
+            perror("send_all");
+            return -1;
+        }
+        if (n == 0) {
+            // Connection closed by peer
+            return total;
+        }
+        total += n;
+    }
+
+    return total;
 }
 
 /* A função network_send() deve:
@@ -244,32 +282,31 @@ MessageT *network_receive(int client_socket){
  * - Enviar a mensagem serializada, através do client_socket.
  * Retorna 0 (OK) ou -1 em caso de erro.
  */
-int network_send(int client_socket, MessageT *msg){
-    if(client_socket == -1)
+int network_send(int client_socket, MessageT *msg) {
+    if (client_socket == -1)
         return -1;
-    if(msg == NULL)
+    if (msg == NULL)
         return -1;
-
 
     size_t msg_size = message_t__get_packed_size(msg);
     uint16_t msg_size_network = htons((uint16_t)msg_size);
 
-    uint8_t *buffer = (uint8_t *) malloc(msg_size);
-    message_t__pack(msg, (uint8_t*)buffer);
+    uint8_t *buffer = (uint8_t *)malloc(msg_size);
+    if (buffer == NULL) {
+        printf("Error allocating memory for the buffer\n");
+        return -1;
+    }
 
+    message_t__pack(msg, buffer);
 
-    if (send(client_socket,&msg_size_network, sizeof(uint16_t),0) < 0) {
-        printf("Error sending message size");
+    if (send_all(client_socket, &msg_size_network, sizeof(uint16_t), 0) < 0) {
+        printf("Error sending message size\n");
         free(buffer);
         return -1;
     }
-    if (buffer == NULL) {
-        printf("??wtf??");
-        return -1;
-    }
 
-    if (send(client_socket, buffer, msg_size,0) < 0){
-        printf("Erro ao enviar mensagem");
+    if (send_all(client_socket, buffer, msg_size, 0) < 0) {
+        printf("Error sending message data\n");
         free(buffer);
         return -1;
     }

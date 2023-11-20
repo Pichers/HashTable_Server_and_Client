@@ -106,7 +106,6 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
             lock_sync(1, 1);
             //critical section
             int i = table_put(table, entry->key, entry->value);
-            printf("%d \n\n", i);
             //release table lock
             release(1);
 
@@ -334,7 +333,7 @@ int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
                 entry_temp->value.data = data->data;
 
                 entries[j] = entry_temp;
-                
+
                 free(data);
             }
 

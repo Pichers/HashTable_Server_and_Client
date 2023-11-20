@@ -6,6 +6,7 @@
 #include "client_stub.h"
 #include "stats.h"
 
+struct rtable_t* rtable;
 
 void help() {
         printf("Comandos disponíveis:\n");
@@ -19,6 +20,15 @@ void help() {
         printf("quit\n");
 }
 
+void client_quit(){
+    int a = rtable_disconnect(rtable);
+    if(a == -1){
+        printf("Erro ao desconectar do servidor\n\n");
+    }
+    printf("Bye bye client\n");
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         fprintf(stderr, "Uso: %s <server_address:port>\n", argv[0]);
@@ -26,9 +36,10 @@ int main(int argc, char *argv[]) {
     }
 
     signal(SIGPIPE, SIG_IGN);
+    signal(SIGINT, client_quit);
 
     // Conecta ao servidor
-    struct rtable_t *rtable = rtable_connect(argv[1]);
+    rtable = rtable_connect(argv[1]);
     if (rtable == NULL) {
         fprintf(stderr, "Falha ao conectar ao servidor\n");
         exit(1);
@@ -181,12 +192,7 @@ int main(int argc, char *argv[]) {
             }
 
         } else if (strcmp(token, "quit") == 0) {
-
-            int a = rtable_disconnect(rtable);
-            if(a == -1){
-                printf("Erro ao desconectar do servidor\n\n");
-            }
-            printf("Bye bye client\n");
+            client_quit();
             break;
         } else {
             help();

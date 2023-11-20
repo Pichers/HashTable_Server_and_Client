@@ -41,4 +41,4 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 include $(wildcard $(DEP_DIR)/*.d)
 
 clean:
-	rm -rf $(DEP_DIR)/*  $(OBJ_DIR)/client_stub.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/network_server.o $(OBJ_DIR)/table_client.o $(OBJ_DIR)/table_server.o $(OBJ_DIR)/table_skel.o $(OBJ_DIR)/sdmessage.pb-c.o $(BIN_DIR)/table_client $(BIN_DIR)/table_server
+	rm -rf $(DEP_DIR)/*  $(OBJ_DIR)/client_stub.o $(OBJ_DIR)/network_client.o $(OBJ_DIR)/network_server.o $(OBJ_DIR)/table_client.o $(OBJ_DIR)/table_server.o $(OBJ_DIR)/table_skel.o $(OBJ_DIR)/sdmessage.pb-c.o $(OBJ_DIR)/stats.o $(BIN_DIR)/table_client $(BIN_DIR)/table_server

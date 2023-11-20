@@ -16,3 +16,8 @@ O projeto está organizado de acordo com a seguinte estrutura:
 
 Decisões de implementação:
     Foi escolhido criar um header file privado, mutex-private.h, responsável por partilhar as variáveis necessárias para a sincronização.
+    Foi utilizada a biblioteca pthreads do UNIX.
+    O atendimento de clientes segue o modelo thread-per-client.
+    Foi implementada uma função no servidor para que o servidor desligue, libertando toda a memória, aquando do comando ctrl-c.
+    Também no cliente foi implementada uma função com o mesmo propósito.
+
