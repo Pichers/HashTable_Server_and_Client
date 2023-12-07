@@ -7,7 +7,7 @@ DEP_DIR = dependencies
 
 
 CC = gcc
-CFLAGS = -Wall -MMD -MP -g -MF $(DEP_DIR)/$*.d -I $(INC_DIR)
+CFLAGS = -Wall -MMD -MP -g -MF $(DEP_DIR)/$*.d -I $(INC_DIR) -lzookeeper_mt
 
 EXECS = $(BIN_DIR)/table_client $(BIN_DIR)/table_server 
 
