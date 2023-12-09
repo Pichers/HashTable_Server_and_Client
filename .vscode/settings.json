@@ -4,7 +4,10 @@
     "table_skel.h": "c",
     "stdlib.h": "c",
     "string.h": "c",
-    "sdmessage.pb-c.h": "c"
+    "sdmessage.pb-c.h": "c",
+    "client_stub-private.h": "c",
+    "zookeeper.h": "c",
+    "mutex-private.h": "c"
   },
   "C_Cpp_Runner.msvcBatchPath": "",
   "C_Cpp_Runner.cCompilerPath": "gcc",
