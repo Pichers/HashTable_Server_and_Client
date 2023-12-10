@@ -13,12 +13,30 @@
 #include "mutex-private.h"
 #include "table_skel.h"
 #include "stats.h"
+#include <zookeeper/zookeeper.h>
 
 struct thread_args{
     int client_socket;
     struct table_t* table;
     struct stats_t* stats;
 };
+
+int is_connected;
+
+
+void connection(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx){
+    if (type == ZOO_SESSION_EVENT){
+        if (state == ZOO_CONNECTED_STATE){
+            is_connected = 1;
+        }
+        else {
+            is_connected = 0;
+        }
+    }
+}
+
+
+
 
 void* client_handler(void* arg);
 
@@ -60,7 +78,7 @@ void change_connected(int change, struct stats_t* stats){
  * num determinado porto.
  * Retorna o descritor do socket ou -1 em caso de erro.
  */
-int network_server_init(short port){
+int network_server_init(short port, char* ZKADDR){
     int skt;
 
     if(port < 0)

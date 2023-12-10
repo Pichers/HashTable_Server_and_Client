@@ -145,7 +145,11 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, client_quit);
 
     zh = zookeeper_init(argv[1], connection_watcher, 10000, 0, 0, 0);
-
+    if(zh == NULL){
+        printf("Error connecting to ZooKeeper\n");
+        return NULL;
+    }
+    sleep(3);
     //função para ir buscar head e tail, e registar as rtables
     get_read_write_servers();
 
@@ -161,6 +165,7 @@ int main(int argc, char *argv[]) {
         ///////////////////////////////////////////
         //----------TAKEN FROM EXAMPLE-----------//
         if (is_connected) {
+
 			if (ZNONODE == zoo_exists(zh, zoo_path, 0, NULL)) {
 				if (ZOK == zoo_create( zh, zoo_path, NULL, -1, & ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0)) {
 					fprintf(stderr, "%s created!\n", zoo_path);
@@ -330,6 +335,7 @@ int main(int argc, char *argv[]) {
             help();
         }
     }
+    free(children_list);
     exit(0);
     return 0;
 }

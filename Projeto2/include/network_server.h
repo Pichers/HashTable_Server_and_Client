@@ -9,7 +9,7 @@
  * num determinado porto.
  * Retorna o descritor do socket ou -1 em caso de erro.
  */
-int network_server_init(short port);
+int network_server_init(short port, char* ZKADDR);
 
 /* A função network_main_loop() deve:
  * - Aceitar uma conexão de um cliente;

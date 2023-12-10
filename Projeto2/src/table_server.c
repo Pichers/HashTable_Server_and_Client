@@ -42,7 +42,7 @@ int main(int argc, char const *argv[]){
     }
 
     //inicializar/associar ao socket
-    skt = network_server_init(port);
+    skt = network_server_init(port, (char *) argv[3]);
     if(skt == -1){
         printf("Error binding to port");
         table_skel_destroy(table);
