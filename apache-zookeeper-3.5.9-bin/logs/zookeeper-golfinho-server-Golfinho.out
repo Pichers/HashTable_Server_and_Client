@@ -1,54 +1,64 @@
-2023-12-09 18:29:32,332 [myid:] - INFO  [main:QuorumPeerConfig@136] - Reading configuration from: /home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../conf/zoo.cfg
-2023-12-09 18:29:32,336 [myid:] - INFO  [main:QuorumPeerConfig@388] - clientPortAddress is 0.0.0.0:2181
-2023-12-09 18:29:32,336 [myid:] - INFO  [main:QuorumPeerConfig@392] - secureClientPort is not set
-2023-12-09 18:29:32,338 [myid:] - INFO  [main:DatadirCleanupManager@78] - autopurge.snapRetainCount set to 3
-2023-12-09 18:29:32,338 [myid:] - INFO  [main:DatadirCleanupManager@79] - autopurge.purgeInterval set to 0
-2023-12-09 18:29:32,338 [myid:] - INFO  [main:DatadirCleanupManager@101] - Purge task is not scheduled.
-2023-12-09 18:29:32,338 [myid:] - WARN  [main:QuorumPeerMain@125] - Either no config or no quorum defined in config, running  in standalone mode
-2023-12-09 18:29:32,340 [myid:] - INFO  [main:ManagedUtil@45] - Log4j 1.2 jmx support found and enabled.
-2023-12-09 18:29:32,346 [myid:] - INFO  [main:QuorumPeerConfig@136] - Reading configuration from: /home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../conf/zoo.cfg
-2023-12-09 18:29:32,346 [myid:] - INFO  [main:QuorumPeerConfig@388] - clientPortAddress is 0.0.0.0:2181
-2023-12-09 18:29:32,346 [myid:] - INFO  [main:QuorumPeerConfig@392] - secureClientPort is not set
-2023-12-09 18:29:32,347 [myid:] - INFO  [main:ZooKeeperServerMain@118] - Starting server
-2023-12-09 18:29:32,348 [myid:] - INFO  [main:FileTxnSnapLog@115] - zookeeper.snapshot.trust.empty : false
-2023-12-09 18:29:32,355 [myid:] - INFO  [main:Environment@109] - Server environment:zookeeper.version=3.5.9-83df9301aa5c2a5d284a9940177808c01bc35cef, built on 01/06/2021 19:49 GMT
-2023-12-09 18:29:32,355 [myid:] - INFO  [main:Environment@109] - Server environment:host.name=Golfinho
-2023-12-09 18:29:32,355 [myid:] - INFO  [main:Environment@109] - Server environment:java.version=19.0.2
-2023-12-09 18:29:32,355 [myid:] - INFO  [main:Environment@109] - Server environment:java.vendor=Private Build
-2023-12-09 18:29:32,355 [myid:] - INFO  [main:Environment@109] - Server environment:java.home=/usr/lib/jvm/java-19-openjdk-amd64
-2023-12-09 18:29:32,355 [myid:] - INFO  [main:Environment@109] - Server environment:java.class.path=/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../zookeeper-server/target/classes:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../build/classes:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../zookeeper-server/target/lib/*.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../build/lib/*.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/zookeeper-jute-3.5.9.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/zookeeper-3.5.9.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/slf4j-log4j12-1.7.25.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/slf4j-api-1.7.25.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-transport-native-unix-common-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-transport-native-epoll-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-transport-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-resolver-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-handler-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-common-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-codec-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-buffer-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/log4j-1.2.17.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/json-simple-1.1.1.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jline-2.14.6.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-util-ajax-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-util-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-servlet-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-server-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-security-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-io-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-http-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/javax.servlet-api-3.1.0.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jackson-databind-2.10.5.1.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jackson-core-2.10.5.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jackson-annotations-2.10.5.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/commons-cli-1.2.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/audience-annotations-0.5.0.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../zookeeper-*.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../zookeeper-server/src/main/resources/lib/*.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../conf:
-2023-12-09 18:29:32,356 [myid:] - INFO  [main:Environment@109] - Server environment:java.library.path=/usr/java/packages/lib:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib
-2023-12-09 18:29:32,356 [myid:] - INFO  [main:Environment@109] - Server environment:java.io.tmpdir=/tmp
-2023-12-09 18:29:32,356 [myid:] - INFO  [main:Environment@109] - Server environment:java.compiler=<NA>
-2023-12-09 18:29:32,356 [myid:] - INFO  [main:Environment@109] - Server environment:os.name=Linux
-2023-12-09 18:29:32,357 [myid:] - INFO  [main:Environment@109] - Server environment:os.arch=amd64
-2023-12-09 18:29:32,357 [myid:] - INFO  [main:Environment@109] - Server environment:os.version=6.2.0-37-generic
-2023-12-09 18:29:32,357 [myid:] - INFO  [main:Environment@109] - Server environment:user.name=golfinho
-2023-12-09 18:29:32,357 [myid:] - INFO  [main:Environment@109] - Server environment:user.home=/home/golfinho
-2023-12-09 18:29:32,357 [myid:] - INFO  [main:Environment@109] - Server environment:user.dir=/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin
-2023-12-09 18:29:32,357 [myid:] - INFO  [main:Environment@109] - Server environment:os.memory.free=236MB
-2023-12-09 18:29:32,357 [myid:] - INFO  [main:Environment@109] - Server environment:os.memory.max=1000MB
-2023-12-09 18:29:32,357 [myid:] - INFO  [main:Environment@109] - Server environment:os.memory.total=250MB
-2023-12-09 18:29:32,358 [myid:] - INFO  [main:ZooKeeperServer@953] - minSessionTimeout set to 4000
-2023-12-09 18:29:32,358 [myid:] - INFO  [main:ZooKeeperServer@962] - maxSessionTimeout set to 40000
-2023-12-09 18:29:32,359 [myid:] - INFO  [main:ZooKeeperServer@181] - Created server with tickTime 2000 minSessionTimeout 4000 maxSessionTimeout 40000 datadir /tmp/zookeeper/version-2 snapdir /tmp/zookeeper/version-2
-2023-12-09 18:29:32,379 [myid:] - INFO  [main:Log@169] - Logging initialized @435ms to org.eclipse.jetty.util.log.Slf4jLog
-2023-12-09 18:29:32,428 [myid:] - WARN  [main:ContextHandler@1660] - o.e.j.s.ServletContextHandler@59309333{/,null,STOPPED} contextPath ends with /*
-2023-12-09 18:29:32,428 [myid:] - WARN  [main:ContextHandler@1671] - Empty contextPath
-2023-12-09 18:29:32,442 [myid:] - INFO  [main:Server@375] - jetty-9.4.35.v20201120; built: 2020-11-20T21:17:03.964Z; git: bdc54f03a5e0a7e280fab27f55c3c75ee8da89fb; jvm 19.0.2+7-Ubuntu-0ubuntu322.04
-2023-12-09 18:29:32,461 [myid:] - INFO  [main:DefaultSessionIdManager@334] - DefaultSessionIdManager workerName=node0
-2023-12-09 18:29:32,461 [myid:] - INFO  [main:DefaultSessionIdManager@339] - No SessionScavenger set, using defaults
-2023-12-09 18:29:32,463 [myid:] - INFO  [main:HouseKeeper@132] - node0 Scavenging every 660000ms
-2023-12-09 18:29:32,466 [myid:] - WARN  [main:ConstraintSecurityHandler@758] - ServletContext@o.e.j.s.ServletContextHandler@59309333{/,null,STARTING} has uncovered http methods for path: /*
-2023-12-09 18:29:32,474 [myid:] - INFO  [main:ContextHandler@916] - Started o.e.j.s.ServletContextHandler@59309333{/,null,AVAILABLE}
-2023-12-09 18:29:32,485 [myid:] - INFO  [main:AbstractConnector@331] - Started ServerConnector@63021689{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
-2023-12-09 18:29:32,485 [myid:] - INFO  [main:Server@415] - Started @547ms
-2023-12-09 18:29:32,485 [myid:] - INFO  [main:JettyAdminServer@116] - Started AdminServer on address 0.0.0.0, port 8080 and command URL /commands
-2023-12-09 18:29:32,488 [myid:] - INFO  [main:ServerCnxnFactory@135] - Using org.apache.zookeeper.server.NIOServerCnxnFactory as server connection factory
-2023-12-09 18:29:32,490 [myid:] - INFO  [main:NIOServerCnxnFactory@673] - Configuring NIO connection handler with 10s sessionless connection timeout, 2 selector thread(s), 32 worker threads, and 64 kB direct buffers.
-2023-12-09 18:29:32,491 [myid:] - INFO  [main:NIOServerCnxnFactory@686] - binding to port 0.0.0.0/0.0.0.0:2181
-2023-12-09 18:29:32,502 [myid:] - INFO  [main:ZKDatabase@117] - zookeeper.snapshotSizeFactor = 0.33
-2023-12-09 18:29:32,505 [myid:] - INFO  [main:FileTxnSnapLog@404] - Snapshotting: 0x0 to /tmp/zookeeper/version-2/snapshot.0
-2023-12-09 18:29:32,507 [myid:] - INFO  [main:FileTxnSnapLog@404] - Snapshotting: 0x0 to /tmp/zookeeper/version-2/snapshot.0
-2023-12-09 18:29:32,513 [myid:] - INFO  [ProcessThread(sid:0 cport:2181)::PrepRequestProcessor@132] - PrepRequestProcessor (sid:0) started, reconfigEnabled=false
-2023-12-09 18:29:32,516 [myid:] - INFO  [main:ContainerManager@64] - Using checkIntervalMs=60000 maxPerMinute=10000
+2023-12-10 02:03:44,237 [myid:] - INFO  [main:QuorumPeerConfig@136] - Reading configuration from: /home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../conf/zoo.cfg
+2023-12-10 02:03:44,241 [myid:] - INFO  [main:QuorumPeerConfig@388] - clientPortAddress is 0.0.0.0:2181
+2023-12-10 02:03:44,241 [myid:] - INFO  [main:QuorumPeerConfig@392] - secureClientPort is not set
+2023-12-10 02:03:44,243 [myid:] - INFO  [main:DatadirCleanupManager@78] - autopurge.snapRetainCount set to 3
+2023-12-10 02:03:44,243 [myid:] - INFO  [main:DatadirCleanupManager@79] - autopurge.purgeInterval set to 0
+2023-12-10 02:03:44,243 [myid:] - INFO  [main:DatadirCleanupManager@101] - Purge task is not scheduled.
+2023-12-10 02:03:44,243 [myid:] - WARN  [main:QuorumPeerMain@125] - Either no config or no quorum defined in config, running  in standalone mode
+2023-12-10 02:03:44,246 [myid:] - INFO  [main:ManagedUtil@45] - Log4j 1.2 jmx support found and enabled.
+2023-12-10 02:03:44,252 [myid:] - INFO  [main:QuorumPeerConfig@136] - Reading configuration from: /home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../conf/zoo.cfg
+2023-12-10 02:03:44,252 [myid:] - INFO  [main:QuorumPeerConfig@388] - clientPortAddress is 0.0.0.0:2181
+2023-12-10 02:03:44,252 [myid:] - INFO  [main:QuorumPeerConfig@392] - secureClientPort is not set
+2023-12-10 02:03:44,252 [myid:] - INFO  [main:ZooKeeperServerMain@118] - Starting server
+2023-12-10 02:03:44,255 [myid:] - INFO  [main:FileTxnSnapLog@115] - zookeeper.snapshot.trust.empty : false
+2023-12-10 02:03:44,263 [myid:] - INFO  [main:Environment@109] - Server environment:zookeeper.version=3.5.9-83df9301aa5c2a5d284a9940177808c01bc35cef, built on 01/06/2021 19:49 GMT
+2023-12-10 02:03:44,263 [myid:] - INFO  [main:Environment@109] - Server environment:host.name=Golfinho
+2023-12-10 02:03:44,263 [myid:] - INFO  [main:Environment@109] - Server environment:java.version=19.0.2
+2023-12-10 02:03:44,263 [myid:] - INFO  [main:Environment@109] - Server environment:java.vendor=Private Build
+2023-12-10 02:03:44,263 [myid:] - INFO  [main:Environment@109] - Server environment:java.home=/usr/lib/jvm/java-19-openjdk-amd64
+2023-12-10 02:03:44,263 [myid:] - INFO  [main:Environment@109] - Server environment:java.class.path=/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../zookeeper-server/target/classes:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../build/classes:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../zookeeper-server/target/lib/*.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../build/lib/*.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/zookeeper-jute-3.5.9.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/zookeeper-3.5.9.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/slf4j-log4j12-1.7.25.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/slf4j-api-1.7.25.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-transport-native-unix-common-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-transport-native-epoll-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-transport-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-resolver-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-handler-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-common-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-codec-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/netty-buffer-4.1.50.Final.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/log4j-1.2.17.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/json-simple-1.1.1.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jline-2.14.6.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-util-ajax-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-util-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-servlet-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-server-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-security-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-io-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jetty-http-9.4.35.v20201120.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/javax.servlet-api-3.1.0.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jackson-databind-2.10.5.1.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jackson-core-2.10.5.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/jackson-annotations-2.10.5.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/commons-cli-1.2.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../lib/audience-annotations-0.5.0.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../zookeeper-*.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../zookeeper-server/src/main/resources/lib/*.jar:/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin/../conf:
+2023-12-10 02:03:44,264 [myid:] - INFO  [main:Environment@109] - Server environment:java.library.path=/usr/java/packages/lib:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib
+2023-12-10 02:03:44,264 [myid:] - INFO  [main:Environment@109] - Server environment:java.io.tmpdir=/tmp
+2023-12-10 02:03:44,264 [myid:] - INFO  [main:Environment@109] - Server environment:java.compiler=<NA>
+2023-12-10 02:03:44,264 [myid:] - INFO  [main:Environment@109] - Server environment:os.name=Linux
+2023-12-10 02:03:44,264 [myid:] - INFO  [main:Environment@109] - Server environment:os.arch=amd64
+2023-12-10 02:03:44,265 [myid:] - INFO  [main:Environment@109] - Server environment:os.version=6.2.0-37-generic
+2023-12-10 02:03:44,265 [myid:] - INFO  [main:Environment@109] - Server environment:user.name=golfinho
+2023-12-10 02:03:44,265 [myid:] - INFO  [main:Environment@109] - Server environment:user.home=/home/golfinho
+2023-12-10 02:03:44,265 [myid:] - INFO  [main:Environment@109] - Server environment:user.dir=/home/golfinho/Faculdade/SD/SD_Projetos/apache-zookeeper-3.5.9-bin/bin
+2023-12-10 02:03:44,265 [myid:] - INFO  [main:Environment@109] - Server environment:os.memory.free=235MB
+2023-12-10 02:03:44,265 [myid:] - INFO  [main:Environment@109] - Server environment:os.memory.max=1000MB
+2023-12-10 02:03:44,265 [myid:] - INFO  [main:Environment@109] - Server environment:os.memory.total=250MB
+2023-12-10 02:03:44,266 [myid:] - INFO  [main:ZooKeeperServer@953] - minSessionTimeout set to 4000
+2023-12-10 02:03:44,266 [myid:] - INFO  [main:ZooKeeperServer@962] - maxSessionTimeout set to 40000
+2023-12-10 02:03:44,267 [myid:] - INFO  [main:ZooKeeperServer@181] - Created server with tickTime 2000 minSessionTimeout 4000 maxSessionTimeout 40000 datadir /tmp/zookeeper/version-2 snapdir /tmp/zookeeper/version-2
+2023-12-10 02:03:44,291 [myid:] - INFO  [main:Log@169] - Logging initialized @457ms to org.eclipse.jetty.util.log.Slf4jLog
+2023-12-10 02:03:44,346 [myid:] - WARN  [main:ContextHandler@1660] - o.e.j.s.ServletContextHandler@59309333{/,null,STOPPED} contextPath ends with /*
+2023-12-10 02:03:44,346 [myid:] - WARN  [main:ContextHandler@1671] - Empty contextPath
+2023-12-10 02:03:44,360 [myid:] - INFO  [main:Server@375] - jetty-9.4.35.v20201120; built: 2020-11-20T21:17:03.964Z; git: bdc54f03a5e0a7e280fab27f55c3c75ee8da89fb; jvm 19.0.2+7-Ubuntu-0ubuntu322.04
+2023-12-10 02:03:44,377 [myid:] - INFO  [main:DefaultSessionIdManager@334] - DefaultSessionIdManager workerName=node0
+2023-12-10 02:03:44,377 [myid:] - INFO  [main:DefaultSessionIdManager@339] - No SessionScavenger set, using defaults
+2023-12-10 02:03:44,378 [myid:] - INFO  [main:HouseKeeper@132] - node0 Scavenging every 660000ms
+2023-12-10 02:03:44,381 [myid:] - WARN  [main:ConstraintSecurityHandler@758] - ServletContext@o.e.j.s.ServletContextHandler@59309333{/,null,STARTING} has uncovered http methods for path: /*
+2023-12-10 02:03:44,389 [myid:] - INFO  [main:ContextHandler@916] - Started o.e.j.s.ServletContextHandler@59309333{/,null,AVAILABLE}
+2023-12-10 02:03:44,399 [myid:] - INFO  [main:AbstractConnector@331] - Started ServerConnector@63021689{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
+2023-12-10 02:03:44,399 [myid:] - INFO  [main:Server@415] - Started @572ms
+2023-12-10 02:03:44,399 [myid:] - INFO  [main:JettyAdminServer@116] - Started AdminServer on address 0.0.0.0, port 8080 and command URL /commands
+2023-12-10 02:03:44,407 [myid:] - INFO  [main:ServerCnxnFactory@135] - Using org.apache.zookeeper.server.NIOServerCnxnFactory as server connection factory
+2023-12-10 02:03:44,409 [myid:] - INFO  [main:NIOServerCnxnFactory@673] - Configuring NIO connection handler with 10s sessionless connection timeout, 2 selector thread(s), 32 worker threads, and 64 kB direct buffers.
+2023-12-10 02:03:44,410 [myid:] - INFO  [main:NIOServerCnxnFactory@686] - binding to port 0.0.0.0/0.0.0.0:2181
+2023-12-10 02:03:44,418 [myid:] - INFO  [main:ZKDatabase@117] - zookeeper.snapshotSizeFactor = 0.33
+2023-12-10 02:03:44,421 [myid:] - INFO  [main:FileTxnSnapLog@404] - Snapshotting: 0x0 to /tmp/zookeeper/version-2/snapshot.0
+2023-12-10 02:03:44,423 [myid:] - INFO  [main:FileTxnSnapLog@404] - Snapshotting: 0x0 to /tmp/zookeeper/version-2/snapshot.0
+2023-12-10 02:03:44,428 [myid:] - INFO  [ProcessThread(sid:0 cport:2181)::PrepRequestProcessor@132] - PrepRequestProcessor (sid:0) started, reconfigEnabled=false
+2023-12-10 02:03:44,431 [myid:] - INFO  [main:ContainerManager@64] - Using checkIntervalMs=60000 maxPerMinute=10000
+2023-12-10 02:04:08,020 [myid:] - INFO  [SyncThread:0:FileTxnLog@218] - Creating new log file: log.1
+2023-12-10 03:25:26,424 [myid:] - WARN  [NIOWorkerThread-5:ZooKeeperServer@1028] - Connection request from old client /127.0.0.1:53560; will be dropped if server is in r-o mode
+2023-12-10 03:25:29,432 [myid:] - WARN  [NIOWorkerThread-15:NIOServerCnxn@366] - Unable to read additional data from client sessionid 0x1000007d7660001, likely client has closed socket
+2023-12-10 03:25:34,530 [myid:] - INFO  [SessionTracker:ZooKeeperServer@413] - Expiring session 0x1000007d7660001, timeout of 4000ms exceeded
+2023-12-10 04:28:28,507 [myid:] - WARN  [NIOWorkerThread-16:ZooKeeperServer@1028] - Connection request from old client /127.0.0.1:55142; will be dropped if server is in r-o mode
+2023-12-10 04:28:31,509 [myid:] - WARN  [NIOWorkerThread-26:NIOServerCnxn@366] - Unable to read additional data from client sessionid 0x1000007d7660002, likely client has closed socket
+2023-12-10 04:28:36,530 [myid:] - INFO  [SessionTracker:ZooKeeperServer@413] - Expiring session 0x1000007d7660002, timeout of 4000ms exceeded
+2023-12-10 04:29:10,093 [myid:] - WARN  [NIOWorkerThread-27:ZooKeeperServer@1028] - Connection request from old client /127.0.0.1:53826; will be dropped if server is in r-o mode
+2023-12-10 04:29:13,094 [myid:] - WARN  [NIOWorkerThread-5:NIOServerCnxn@366] - Unable to read additional data from client sessionid 0x1000007d7660003, likely client has closed socket
+2023-12-10 04:29:18,530 [myid:] - INFO  [SessionTracker:ZooKeeperServer@413] - Expiring session 0x1000007d7660003, timeout of 4000ms exceeded
