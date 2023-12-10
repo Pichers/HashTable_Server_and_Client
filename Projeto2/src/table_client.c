@@ -11,12 +11,6 @@
 struct rtable_t* rtable;
 
 
-
-
-
-
-
-
 // #define ZDATALEN 1024 * 1024
 
 // struct rtable_t *rtable = NULL;
@@ -26,7 +20,7 @@ struct rtable_t* rtable;
 static zhandle_t *zh;
 void client_quit();
 static int is_connected;
-static char *zoo_path = "/test";
+static char *zoo_path = "/chain";
 static char *watcher_ctx = "ZooKeeper Data Watcher";
 
 typedef struct String_vector zoo_string;
@@ -95,16 +89,6 @@ static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath
     }
 }
 
-
-
-
-
-
-
-
-
-
-
 void help() {
         printf("Comandos disponíveis:\n");
         printf("put <key> <data>\n");
@@ -118,12 +102,79 @@ void help() {
 }
 
 void client_quit(){
-    int a = rtable_disconnect(rtable);
-    if(a == -1){
+    if(rtable_disconnect(read_rtable) == -1){
+        printf("Erro ao desconectar do servidor\n\n");
+    }
+
+    if(rtable_disconnect(write_rtable) == -1){
         printf("Erro ao desconectar do servidor\n\n");
     }
     printf("Bye bye client\n");
     exit(0);
+}
+
+void get_read_write_servers(struct rtable_t* write, struct rtable_t* read, char* zookeeper_info){
+
+    if (zookeeper_info == NULL)
+        return NULL;
+
+    char *zoo_ip = NULL;
+    char *zoo_port = NULL;
+
+    // Use strtok to split the string at the ':'
+    char *token = strtok(zookeeper_info, ":");
+    
+    if (token != NULL) {
+        zoo_ip = strdup(token); // Duplicate the zoo_ip
+        token = strtok(NULL, ":");
+        if (token != NULL) {
+            zoo_port = token;
+        } else {
+            free(zoo_ip); // Free the zoo_ip if port is missing
+            return NULL;
+        }
+    } else {
+        return NULL;
+    }
+
+    //Get the zoo nodes with server info
+    //int zoo_get_children(zhandle_t *zh, const char *path, int watch, struct String_vector *children);
+    struct String_vector children;
+
+    int ret = zoo_get_children(zh, zoo_path, 0, children);
+
+    if(ret == ZOK && children.count > 0){
+        
+        char headChildPath[256];
+        snprintf(headChildPath, sizeof(headChildPath), "%s/%s", zoo_path, children.data[0]);
+
+        char tailChildPath[256];
+        snprintf(tailChildPath, sizeof(tailChildPath), "%s/%s", zoo_path, children.data[children.count - 1]);
+
+        char* tailBuffer[128];
+        char* headBuffer[128];
+        int bufferLen = sizeof(tailBuffer);
+        
+        char* tailServer = zoo_get(zh, tailChildPath, 0, tailBuffer, &bufferLen, NULL);
+        char* headServer = zoo_get(zh, headChildPath, 0, headBuffer, &bufferLen, NULL);
+
+        // Conecta ao servidor de escrita
+        write = rtableconnect(headServer);
+        if (write == NULL) {
+            fprintf(stderr, "Falha ao conectar ao servidor\n");
+            exit(1);
+        }
+
+        // Conecta ao servidor de leitura
+        read = rtable_connect(tailServer);
+        if (read == NULL) {
+            fprintf(stderr, "Falha ao conectar ao servidor\n");
+            exit(1);
+        }
+        
+        // Free the memory allocated by zoo_get_children
+        deallocate_String_vector(&children);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -135,12 +186,11 @@ int main(int argc, char *argv[]) {
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, client_quit);
 
-    // Conecta ao servidor
-    rtable = rtable_connect(argv[1]);
-    if (rtable == NULL) {
-        fprintf(stderr, "Falha ao conectar ao servidor\n");
-        exit(1);
-    }
+    //função para ir buscar head e tail, e registar as rtables
+    struct rtable_t* write_rtable;
+    struct rtable_t* read_rtable;
+
+    void get_read_write_servers(write_rtable, read_rtable, argv[1]);
 
     char input[256];
     char *token;
@@ -176,7 +226,7 @@ int main(int argc, char *argv[]) {
                     printf("Erro ao criar entry\n\n");
                 }
 
-                int a = rtable_put(rtable, entry);
+                int a = rtable_put(write_rtable, entry);
                 if(a == -1)
                     printf("Erro ao inserir elemento\n\n");
                 
@@ -191,7 +241,7 @@ int main(int argc, char *argv[]) {
             if (key == NULL) {
                 printf("Comando get requer <key>\n\n");
             } else {
-                struct data_t* data = rtable_get(rtable, key);
+                struct data_t* data = rtable_get(read_rtable, key);
                 if (data == NULL) {
                     printf("Elemento nao encontrado, ou erro ao obte-lo\n\n");
                 }
@@ -213,7 +263,7 @@ int main(int argc, char *argv[]) {
                 printf("Comando del requer <key>\n\n");
             } else {
                 
-                int a = rtable_del(rtable, key);
+                int a = rtable_del(write_rtable, key);
                 if(a == -1){
                     printf("Elemento nao encontrado, ou erro ao apaga-lo\n\n");
                 }
@@ -223,7 +273,7 @@ int main(int argc, char *argv[]) {
             }
         } else if (strcmp(token, "size") == 0) {
 
-            int a = rtable_size(rtable);
+            int a = rtable_size(read_rtable);
             if(a == -1){
                 printf("Erro ao obter tamanho da tabela\n\n");
             }
@@ -232,7 +282,7 @@ int main(int argc, char *argv[]) {
             }
 
         } else if (strcmp(token, "getkeys") == 0) {
-            char** keys = rtable_get_keys(rtable);
+            char** keys = rtable_get_keys(read_rtable);
 
             if(keys == NULL){
                 printf("Erro ao obter chaves da tabela\n\n");
@@ -248,7 +298,7 @@ int main(int argc, char *argv[]) {
                 rtable_free_keys(keys);
             }
         } else if (strcmp(token, "gettable") == 0) {
-            struct entry_t** entries = rtable_get_table(rtable);
+            struct entry_t** entries = rtable_get_table(read_rtable);
 
             if(entries == NULL){
                 printf("Erro ao obter tabela\n\n");
@@ -276,7 +326,7 @@ int main(int argc, char *argv[]) {
             }
             
         } else if (strcmp(token, "stats") == 0) {
-            struct stats_t* stats = rtable_stats(rtable);
+            struct stats_t* stats = rtable_stats(read_rtable);
             if(stats == NULL){
                 printf("Erro ao obter estatisticas do servidor\n");
             }else{
