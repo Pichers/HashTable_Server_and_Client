@@ -26,69 +26,69 @@ static char *watcher_ctx = "ZooKeeper Data Watcher";
 
 typedef struct String_vector zoo_string;
 
-void my_watcher_func(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx)
-{
-    if (type == ZOO_SESSION_EVENT){
-        if (state == ZOO_CONNECTED_STATE){
-            is_connected = 1;
-        }
-        else {
-            is_connected = 0;
-        }
-    }
-}
+// void my_watcher_func(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx)
+// {
+//     if (type == ZOO_SESSION_EVENT){
+//         if (state == ZOO_CONNECTED_STATE){
+//             is_connected = 1;
+//         }
+//         else {
+//             is_connected = 0;
+//         }
+//     }
+// }
 
-static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx)
-{
-    zoo_string *children_list = (zoo_string *)malloc(sizeof(zoo_string));
-    if (state == ZOO_CONNECTED_STATE)
-    {
-        if (type == ZOO_CHILD_EVENT)
-        {
-            /* Get the updated children and reset the watch */
-            if (ZOK != zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list))
-            {
-                fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
-            }
+// static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx)
+// {
+//     zoo_string *children_list = (zoo_string *)malloc(sizeof(zoo_string));
+//     if (state == ZOO_CONNECTED_STATE)
+//     {
+//         if (type == ZOO_CHILD_EVENT)
+//         {
+//             /* Get the updated children and reset the watch */
+//             if (ZOK != zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list))
+//             {
+//                 fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
+//             }
 
-            switch (children_list->count)
-            {
-            case 0:
-                if (rtable != NULL)
-                {
-                    if (rtable_disconnect(rtable) < 0)
-                    {
-                        exit(-1);
-                    }
-                    rtable = NULL;
-                }
-                break;
-            case 1:
-                if (ZNONODE == zoo_exists(zh, "/kvstore/primary", 0, NULL))
-                {
-                    int primaryIPLen = 256;
-                    char primaryIP[256] = "";
-                    sleep(1);
-                    if (ZOK != zoo_get(zh, "/kvstore/primary", 0, primaryIP, &primaryIPLen, NULL))
-                    {
-                        printf("ERRO A IR BUSCAR DATA SWITCH 1 FILHO PRIMARY\n");
-                        client_quit();
-                        exit(-1);
-                    }
-                    if ((rtable = rtable_connect(primaryIP)) == NULL)
-                    {
-                        exit(-1);
-                    } // Ligação ao servidor!
-                }
-                break;
-            default:
-                //DO NOTHING
-                break;
-            }
-            free(children_list);
-        }
-    }
-}
+//             switch (children_list->count)
+//             {
+//             case 0:
+//                 if (rtable != NULL)
+//                 {
+//                     if (rtable_disconnect(rtable) < 0)
+//                     {
+//                         exit(-1);
+//                     }
+//                     rtable = NULL;
+//                 }
+//                 break;
+//             case 1:
+//                 if (ZNONODE == zoo_exists(zh, "/kvstore/primary", 0, NULL))
+//                 {
+//                     int primaryIPLen = 256;
+//                     char primaryIP[256] = "";
+//                     sleep(1);
+//                     if (ZOK != zoo_get(zh, "/kvstore/primary", 0, primaryIP, &primaryIPLen, NULL))
+//                     {
+//                         printf("ERRO A IR BUSCAR DATA SWITCH 1 FILHO PRIMARY\n");
+//                         client_quit();
+//                         exit(-1);
+//                     }
+//                     if ((rtable = rtable_connect(primaryIP)) == NULL)
+//                     {
+//                         exit(-1);
+//                     } // Ligação ao servidor!
+//                 }
+//                 break;
+//             default:
+//                 //DO NOTHING
+//                 break;
+//             }
+//             free(children_list);
+//         }
+//     }
+// }
 
 void help() {
         printf("Comandos disponíveis:\n");
@@ -161,14 +161,14 @@ void get_read_write_servers(){
 
         // Conecta ao servidor de escrita
         write_rtable = rtable_connect(headBuffer);
-        if (write == NULL) {
+        if (write_rtable == NULL) {
             fprintf(stderr, "Falha ao conectar ao servidor\n");
             exit(1);
         }
 
         // Conecta ao servidor de leitura
         read_rtable = rtable_connect(tailBuffer);
-        if (read == NULL) {
+        if (read_rtable == NULL) {
             fprintf(stderr, "Falha ao conectar ao servidor\n");
             exit(1);
         }
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, client_quit);
 
-    zh = zookeeper_init(argv[1], NULL, 10000, 0, 0, 0)
+    zh = zookeeper_init(argv[1], NULL, 10000, 0, 0, 0);
 
     //função para ir buscar head e tail, e registar as rtables
     void get_read_write_servers();
