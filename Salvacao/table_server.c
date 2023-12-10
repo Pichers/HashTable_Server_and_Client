@@ -27,13 +27,14 @@ void handle_ctrl_c() {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <port> <n_lists>\n", argv[0]);
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s ZK<IP:port> <port> <n_lists>\n", argv[0]);
         exit(1);
     }
 
-    int port = atoi(argv[1]);
-    int n_lists = atoi(argv[2]);
+    char* ZKport = argv[1];
+    short port = atoi(argv[2]);
+    int n_lists = atoi(argv[3]);
 
     signal(SIGPIPE, SIG_IGN);
     // Set up a Ctrl+C signal handler.
@@ -47,9 +48,14 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    server_socket = network_server_init(port);
+    server_socket = network_server_init(ZKport, port);
     if (server_socket == -1) {
         fprintf(stderr, "Error initializing the socket.\n");
+        exit(1);
+    }
+
+    if(set_table(table) == -1){
+        printf("Erro ao preencher a tabela.\n");
         exit(1);
     }
 
