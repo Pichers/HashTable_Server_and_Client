@@ -12,7 +12,7 @@ struct rtable_t* read_rtable;
 struct rtable_t* write_rtable;
 
 
-// #define ZDATALEN 1024 * 1024
+#define ZDATALEN 1024 * 1024
 
 // struct rtable_t *rtable = NULL;
 
@@ -20,71 +20,14 @@ struct rtable_t* write_rtable;
 // char *nextCommand;
 static zhandle_t *zh;
 void client_quit();
-// static int is_connected;
+static int is_connected;
 static char *zoo_path = "/chain";
-// static char *watcher_ctx = "ZooKeeper Data Watcher";
+static char *watcher_ctx = "ZooKeeper Data Watcher";
 
 typedef struct String_vector zoo_string;
 
-/**
-* Watcher function for connection state change events
-*/
-void connection_watcher(zhandle_t *zzh, int type, int state, const char *path, void* context) {
-	if (type == ZOO_SESSION_EVENT) {
-		if (state == ZOO_CONNECTED_STATE) {
-			is_connected = 1; 
-		} else {
-			is_connected = 0; 
-		}
-	} 
-}
 
-/**
-* Data Watcher function for /MyData node
-*/
-static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx) {
-	zoo_string* children_list =	(zoo_string *) malloc(sizeof(zoo_string));
-	int zoo_data_len = ZDATALEN;
-	if (state == ZOO_CONNECTED_STATE)	 {
-		if (type == ZOO_CHILD_EVENT) {
-	 	   /* Get the updated children and reset the watch */ 
- 			if (ZOK != zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list)) {
- 				fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
- 			} 
 
-            /////////////////
-			get_read_write_servers();
-            /////////////////////
-
-			fprintf(stderr, "\n=== done ===\n");
-		 } 
-	 }
-	 free(children_list);
-}
-
-void help() {
-        printf("Comandos disponíveis:\n");
-        printf("put <key> <data>\n");
-        printf("get <key>\n");
-        printf("del <key>\n");
-        printf("size\n");
-        printf("getkeys\n");
-        printf("gettable\n");
-        printf("stats\n");
-        printf("quit\n");
-}
-
-void client_quit(){
-    if(rtable_disconnect(read_rtable) == -1){
-        printf("Erro ao desconectar do servidor\n\n");
-    }
-
-    if(rtable_disconnect(write_rtable) == -1){
-        printf("Erro ao desconectar do servidor\n\n");
-    }
-    printf("Bye bye client\n");
-    exit(0);
-}
 
 void get_read_write_servers(){
 
@@ -128,6 +71,70 @@ void get_read_write_servers(){
     }
 }
 
+
+
+
+/**
+* Watcher function for connection state change events
+*/
+void connection_watcher(zhandle_t *zzh, int type, int state, const char *path, void* context) {
+	if (type == ZOO_SESSION_EVENT) {
+		if (state == ZOO_CONNECTED_STATE) {
+			is_connected = 1; 
+		} else {
+			is_connected = 0; 
+		}
+	} 
+}
+
+/**
+* Data Watcher function for /MyData node
+*/
+static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx) {
+	zoo_string* children_list =	(zoo_string *) malloc(sizeof(zoo_string));
+	// int zoo_data_len = ZDATALEN;
+	if (state == ZOO_CONNECTED_STATE)	 {
+		if (type == ZOO_CHILD_EVENT) {
+	 	   /* Get the updated children and reset the watch */ 
+ 			if (ZOK != zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list)) {
+ 				fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
+ 			} 
+
+            /////////////////
+			get_read_write_servers();
+            /////////////////////
+
+			fprintf(stderr, "\n=== done ===\n");
+		 } 
+	 }
+	 free(children_list);
+}
+
+void help() {
+        printf("Comandos disponíveis:\n");
+        printf("put <key> <data>\n");
+        printf("get <key>\n");
+        printf("del <key>\n");
+        printf("size\n");
+        printf("getkeys\n");
+        printf("gettable\n");
+        printf("stats\n");
+        printf("quit\n");
+}
+
+void client_quit(){
+    if(rtable_disconnect(read_rtable) == -1){
+        printf("Erro ao desconectar do servidor\n\n");
+    }
+
+    if(rtable_disconnect(write_rtable) == -1){
+        printf("Erro ao desconectar do servidor\n\n");
+    }
+    printf("Bye bye client\n");
+    exit(0);
+}
+
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         fprintf(stderr, "Uso: %s <server_address:port>\n", argv[0]);
@@ -145,22 +152,27 @@ int main(int argc, char *argv[]) {
     char input[256];
     char *token;
     help();
+
+
+
+
+    zoo_string* children_list = (zoo_string *) malloc(sizeof(zoo_string));
     while (1) {
         ///////////////////////////////////////////
         //----------TAKEN FROM EXAMPLE-----------//
         if (is_connected) {
-			if (ZNONODE == zoo_exists(zh, root_path, 0, NULL)) {
-				if (ZOK == zoo_create( zh, root_path, NULL, -1, & ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0)) {
-					fprintf(stderr, "%s created!\n", root_path);
+			if (ZNONODE == zoo_exists(zh, zoo_path, 0, NULL)) {
+				if (ZOK == zoo_create( zh, zoo_path, NULL, -1, & ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0)) {
+					fprintf(stderr, "%s created!\n", zoo_path);
 				} else {
-					fprintf(stderr,"Error Creating %s!\n", root_path);
+					fprintf(stderr,"Error Creating %s!\n", zoo_path);
 					exit(EXIT_FAILURE);
 				} 
 			}	
-			if (ZOK != zoo_wget_children(zh, root_path, &child_watcher, watcher_ctx, children_list)) {
-				fprintf(stderr, "Error setting watch at %s!\n", root_path);
+			if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
+				fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
 			}
-			fprintf(stderr, "\n=== main znode listing === [ %s ]", root_path); 
+			fprintf(stderr, "\n=== main znode listing === [ %s ]", zoo_path); 
 			for (int i = 0; i < children_list->count; i++)  {
 				fprintf(stderr, "\n(%d): %s", i+1, children_list->data[i]);
 			}
