@@ -35,6 +35,8 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	host_port = argv[1];
+	char* ip[2]; 
+	splitString(argv[2], ":", ip);
 	zh = zookeeper_init(host_port, connection_watcher, 2000, 0, 0, 0);
 
 	if (zh == NULL) {

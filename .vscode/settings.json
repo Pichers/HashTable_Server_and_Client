@@ -7,7 +7,9 @@
     "sdmessage.pb-c.h": "c",
     "client_stub-private.h": "c",
     "zookeeper.h": "c",
-    "mutex-private.h": "c"
+    "mutex-private.h": "c",
+    "socket.h": "c",
+    "in.h": "c"
   },
   "C_Cpp_Runner.msvcBatchPath": "",
   "C_Cpp_Runner.cCompilerPath": "gcc",

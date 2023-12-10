@@ -11,13 +11,10 @@
 #include "stats.h"
 #include "mutex-private.h"
 #include <zookeeper/zookeeper.h>
-
-
-
-struct table_t *table;
-struct statistics *stats;
-pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+#include <ifaddrs.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 
 
@@ -26,10 +23,12 @@ char *IPB;
 char *IPP;
 int server;
 
+// struct table_t *table;
+
 
 zhandle_t *zh;
 int is_connected;
-char *zoo_path = "/test";
+char *zoo_path = "/chain";
 typedef struct String_vector zoo_string;
 static char *watcher_ctx = "ZooKeeper Data Watcher";
 
@@ -45,152 +44,96 @@ void my_watcher_func(zhandle_t *zzh, int type, int state, const char *path, void
     }
 }
 
-
-static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx) {
-    if (type == ZOO_CHILD_EVENT) {
-        if (state == ZOO_CONNECTED_STATE) {
-            // React to child node changes in the znode
-            // For example:
-            // - Fetch updated child nodes
-            // - Update internal data structures or perform actions based on changes
-            // - Handle these changes in the context of your table_skel
-
-            // Example:
-            // Fetch the updated list of child nodes
-            zoo_string children_list;
-            int ret = zoo_wget_children(wzh, zpath, child_watcher, watcher_ctx, &children_list);
-            if (ret != ZOK) {
-                fprintf(stderr, "Error setting watch at %s!\n", zpath);
-                // Handle the error
-            } else {
-                // Process the updated children list
-                // Example: Update internal data structures based on the changes
+void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx){
+    zoo_string *children_list = (zoo_string *)malloc(sizeof(zoo_string));
+    if (state == ZOO_CONNECTED_STATE){
+        if (type == ZOO_CHILD_EVENT){
+            /* Get the updated children and reset the watch */
+            if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)){
+                fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
+                exit(-1);
             }
-        } else {
-            // Handle other states if necessary
+            switch (children_list->count){
+                case 1:
+                    if (ZNONODE != zoo_exists(zh, "/kvstore/primary", 0, NULL)){
+                        if (backup != NULL){
+                            // if ((rtable_disconnect(backup)) < 0){
+                            //     exit(-1);
+                            // }
+                            backup = NULL;
+                        }
+                        IPB = NULL;
+                        // meter a null caso antes houvesse um backup;
+                    }
+                    else{
+                        if (backup != NULL){
+                            // if ((rtable_disconnect(backup)) < 0){
+                            //     exit(-1);
+                            // }
+                            backup = NULL;
+                        }
+                        IPB = NULL;
+                        int backupIPLen = 256;
+                        char backupIP[256] = "";
+                        if (ZOK != zoo_get(zh, "/kvstore/backup", 0, backupIP, &backupIPLen, NULL)){
+                            printf("ERRO A IR BUSCAR DATA BACKUP 1 FILHO\n");
+                            exit(-1);
+                        }
+                        IPP = NULL;
+                        if (ZOK != zoo_delete(zh, "/kvstore/backup", -1)){
+                            printf("DELETE DO BACKUP\n");
+                            exit(-1);
+                        }
+                        char *watch_prim_path = "/kvstore/primary";
+                        if (ZOK != zoo_create(zh, watch_prim_path, backupIP, strlen(backupIP), &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0)){
+                            fprintf(stderr, "Error creating znode from path %s!\n", watch_prim_path);
+                            exit(-1);
+                        }
+                        server = 1;
+                    }
+                    break;
+                case 2:
+                    if (server == 1){
+                        if (backup == NULL){
+                            int backupIPLen = 256;
+                            char backupIP[256] = "";
+                            if (ZOK != zoo_get(zh, "/kvstore/backup", 0, backupIP, &backupIPLen, NULL))
+                        {
+                            printf("ERRO A IR BUSCAR DATA BACKUP 2 FILHOS\n");
+                            exit(-1);
+                        }
+                        // char **keys = table_get_keys(table);
+
+                        // int i = 0;
+                        // while (keys[i] != NULL)
+                        // {
+                        //     struct data_t *data = table_get(table, keys[i]);
+                        //     // rtable_put(backup, entry_create(keys[i], data));
+                        //     i++;
+                        // }
+                        IPB = backupIP;
+                    }
+                }
+                else
+                {
+                    int primaryIPLen = 256;
+                    char primaryIP[256] = "";
+                    if (ZOK != zoo_get(zh, "/kvstore/primary", 0, primaryIP, &primaryIPLen, NULL))
+                    {
+                        printf("ERRO A IR BUSCAR DATA BACKUP 2 FILHOS\n");
+                        exit(-1);
+                    }
+                    IPP = primaryIP;
+                }
+                break;
+            default:
+                // DO NOTHING
+                break;
+                free(children_list);
+            }
         }
     }
-    // Add further handling based on the type and state if needed
 }
-
-
-// static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx)
-// {
-//     zoo_string *children_list = (zoo_string *)malloc(sizeof(zoo_string));
-//     if (state == ZOO_CONNECTED_STATE)
-//     {
-//         if (type == ZOO_CHILD_EVENT)
-//         {
-//             /* Get the updated children and reset the watch */
-//             if (ZOK != zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list))
-//             {
-//                 fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
-//             }
-//             // TODO
-//             switch (children_list->count)
-//             {
-//             case 1:
-//                 if (ZNONODE != zoo_exists(zh, "/kvstore/primary", 0, NULL))
-//                 {
-//                     if (backup != NULL){
-//                     //     if ((rtable_disconnect(backup)) < 0)
-//                     //     {
-//                     //         exit(-1);
-//                     //     }
-//                         backup = NULL;
-//                     }
-//                     IPB = NULL;
-//                     // meter a null caso antes houvesse um backup;
-//                 }
-//                 else
-//                 {
-//                     if (backup != NULL)
-//                     {
-//                         // if ((rtable_disconnect(backup)) < 0)
-//                         // {
-//                         //     exit(-1);
-//                         // }
-//                         backup = NULL;
-//                     }
-//                     IPB = NULL;
-//                     int backupIPLen = 256;
-//                     char backupIP[256] = "";
-//                     if (ZOK != zoo_get(zh, "/kvstore/backup", 0, backupIP, &backupIPLen, NULL))
-//                     {
-//                         printf("ERRO A IR BUSCAR DATA BACKUP 1 FILHO\n");
-//                         exit(-1);
-//                     }
-//                     IPP = NULL;
-//                     if (ZOK != zoo_delete(zh, "/kvstore/backup", -1))
-//                     {
-//                         printf("DELETE DO BACKUP\n");
-//                         exit(-1);
-//                     }
-//                     char *watch_prim_path = "/kvstore/primary";
-//                     if (ZOK != zoo_create(zh, watch_prim_path, backupIP, strlen(backupIP), &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0))
-//                     {
-//                         fprintf(stderr, "Error creating znode from path %s!\n", watch_prim_path);
-//                         exit(-1);
-//                     }
-//                     server = 1;
-//                 }
-//                 break;
-//             case 2:
-//                 if (server == 1)
-//                 {
-//                     if (backup == NULL)
-//                     {
-//                         int backupIPLen = 256;
-//                         char backupIP[256] = "";
-//                         if (ZOK != zoo_get(zh, "/kvstore/backup", 0, backupIP, &backupIPLen, NULL))
-//                         {
-//                             printf("ERRO A IR BUSCAR DATA BACKUP 2 FILHOS\n");
-//                             exit(-1);
-//                         }
-//                         // if ((backup = rtable_connect(backupIP)) == NULL)
-//                         // {
-//                         //     exit(-1);
-//                         // }
-//                         char **keys = table_get_keys(table);
-
-//                         int i = 0;
-//                         while (keys[i] != NULL)
-//                         {
-//                             struct data_t *data = table_get(table, keys[i]);
-//                             // rtable_put(backup, entry_create(keys[i], data));
-//                             i++;
-//                         }
-//                         IPB = backupIP;
-//                     }
-//                 }
-//                 else
-//                 {
-//                     int primaryIPLen = 256;
-//                     char primaryIP[256] = "";
-//                     if (ZOK != zoo_get(zh, "/kvstore/primary", 0, primaryIP, &primaryIPLen, NULL))
-//                     {
-//                         printf("ERRO A IR BUSCAR DATA BACKUP 2 FILHOS\n");
-//                         exit(-1);
-//                     }
-//                     IPP = primaryIP;
-//                 }
-//                 break;
-//             default:
-//                 // DO NOTHING
-//                 break;
-//                 free(children_list);
-//             }
-//         }
-//     }
-// }
-
-
-
-
-
-
-
-
 
 
 
@@ -202,7 +145,149 @@ static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath
  * serem usadas pela tabela mantida no servidor.
  * Retorna a tabela criada ou NULL em caso de erro.
  */
-struct table_t *table_skel_init(int n_lists){
+struct table_t *table_skel_init(int n_lists, const char *port, char *addr){
+
+    if(n_lists <= 0)
+        return NULL;
+
+    zh = zookeeper_init(addr, my_watcher_func, 2000, 0, NULL, 0);
+    if(zh == NULL){
+        printf("Error connecting to ZooKeeper\n");
+        return NULL;
+    }
+    sleep(3);
+
+    if(is_connected == 1){
+        zoo_string *children_list = (zoo_string *)malloc(sizeof(zoo_string));
+        if (ZOK == zoo_exists(zh, zoo_path, 0, NULL)){
+            if (ZOK == zoo_create(zh, zoo_path, NULL,-1, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0)){
+                printf("Created znode %s\n", zoo_path);
+            } else {
+                printf("Error creating znode %s!\n", zoo_path);
+                exit(-1);
+            }
+        }
+          if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)){
+            fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
+            exit(-1);
+          }
+
+        //primeiro
+        if (children_list->count == 0){
+            char node_path[256];
+            strcat(node_path, zoo_path);
+            strcat(node_path, "/master");
+            char *IPBuffer = malloc(sizeof(char) * 256);
+
+            struct ifaddrs *ifaddr;
+            struct sockaddr_in *address = malloc(sizeof(struct socksockaddr_in *));
+
+            if(getifaddrs(&ifaddr) == -1){
+                printf("Error getting IP address\n");
+                exit(-1);
+            }
+
+            for(struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next){
+
+                if(ifa->ifa_addr->sa_family == AF_INET){
+                    address = (struct sockaddr_in *) ifa->ifa_addr;
+                    // if(strcmp(ifa->ifa_name, "lo") != 0){
+                    //     IPBuffer = inet_ntoa(address->sin_addr);
+                    break;
+                    // }
+                }
+            }
+
+            IPBuffer = inet_ntoa(address->sin_addr);
+
+            char *ip_port = IPBuffer;
+            strcat(ip_port, ":");
+            strcat(ip_port, port);
+
+            if(ZOK != zoo_create(zh, node_path, ip_port, strlen(ip_port), &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0)){
+                printf("Error creating znode from path %s!\n", node_path);
+                exit(-1);
+            }
+            IPP = ip_port;
+            IPB = NULL;
+            server = 1;
+
+            //restantes
+        } else {
+            char node_path[50] = "";
+            strcat(node_path, zoo_path);
+            strcat(node_path, "/primary");
+            if (ZNONODE != zoo_exists(zh, node_path, 0, NULL))
+            {
+                // Criar prefixo para o backup
+                char backup_path[50] = "";
+                strcat(backup_path, zoo_path);
+                strcat(backup_path, "/backup");
+                /********************************************/
+                char *IPBuffer;
+
+                struct ifaddrs *ifaddr;
+                struct sockaddr_in *address = malloc(sizeof(struct socksockaddr_in *));
+
+                if (getifaddrs(&ifaddr) == -1)
+                {
+                    perror("getifaddrs");
+                    exit(EXIT_FAILURE);
+                }
+                for (struct ifaddrs *ifa = ifaddr; ifa != NULL;
+                     ifa = ifa->ifa_next)
+                {
+                    if (ifa->ifa_addr->sa_family == AF_INET)
+                    {
+                        address = (struct sockaddr_in *)ifa->ifa_addr;
+                        break;
+                    }
+                }
+
+                // To convert an Internet network address into ASCII string
+                IPBuffer = inet_ntoa(address->sin_addr);
+
+                /*---------------concatenar ip com port do servidor---------------*/
+                char *ip_port = IPBuffer;
+                strcat(ip_port, ":");
+                strcat(ip_port, port);
+                /*----------------------------------------------------------------*/
+                if (ZOK != zoo_create(zh, backup_path, ip_port, strlen(ip_port), &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL, NULL, 0))
+                {
+                    fprintf(stderr, "Error creating znode from path %s!\n", backup_path);
+                    return NULL;
+                }
+
+                int primaryIPLen = 256;
+                char primaryIP[256] = "";
+                if (ZOK != zoo_get(zh, "/kvstore/primary", 0, primaryIP, &primaryIPLen, NULL))
+                {
+                    printf("ERRO A IR BUSCAR DATA BACKUP 2 FILHOS\n");
+                    exit(-1);
+                }
+                IPP = primaryIP;
+                IPB = ip_port;
+                server = 2;
+            }
+            else
+            {
+                while (ZNONODE != zoo_exists(zh, node_path, 0, NULL))
+                {
+                    printf("Não existe servidor Primário\n");
+                    sleep(5);
+                }
+            }
+
+
+        }
+        free(children_list->data);
+        free(children_list);
+
+    }
+
+
+
+
     struct table_t* table = table_create(n_lists);
 
     if (table == NULL)

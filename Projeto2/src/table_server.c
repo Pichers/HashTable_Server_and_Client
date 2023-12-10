@@ -18,8 +18,8 @@ void server_shutdown(){
 
 int main(int argc, char const *argv[]){
 
-    if (argc != 3) {
-        fprintf(stderr, "Uso: %s <port> <n_lists>\n", argv[0]);
+    if (argc != 4) {
+        fprintf(stderr, "Uso: %s <port> <n_lists> <ZooKeeper IP>:<ZooKeeper port>\n", argv[0]);
         exit(1);
     }
 
@@ -30,11 +30,12 @@ int main(int argc, char const *argv[]){
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, server_shutdown);
 
-    int port = atoi(argv[1]);
+    const char *porta = argv[1];
+    int port = atoi(porta);
     int n_lists = atoi(argv[2]);
 
     //iniciar a tabela com n_lists listas
-    table = table_skel_init(n_lists);
+    table = table_skel_init(n_lists, porta ,(char *) argv[3]);
     if (table == NULL) {
         printf("Error creating table");
         exit(1);

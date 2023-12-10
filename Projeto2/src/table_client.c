@@ -20,9 +20,9 @@ struct rtable_t* write_rtable;
 // char *nextCommand;
 static zhandle_t *zh;
 void client_quit();
-static int is_connected;
+// static int is_connected;
 static char *zoo_path = "/chain";
-static char *watcher_ctx = "ZooKeeper Data Watcher";
+// static char *watcher_ctx = "ZooKeeper Data Watcher";
 
 typedef struct String_vector zoo_string;
 
