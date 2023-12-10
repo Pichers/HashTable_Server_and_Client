@@ -8,7 +8,8 @@
 #include "stats.h"
 #include <zookeeper/zookeeper.h>
 
-struct rtable_t* rtable;
+struct rtable_t* read_rtable;
+struct rtable_t* write_rtable;
 
 
 // #define ZDATALEN 1024 * 1024
@@ -113,35 +114,35 @@ void client_quit(){
     exit(0);
 }
 
-void get_read_write_servers(struct rtable_t* write, struct rtable_t* read, char* zookeeper_info){
+void get_read_write_servers(){
 
-    if (zookeeper_info == NULL)
-        return NULL;
+    // if (zookeeper_info == NULL)
+    //     return;
 
-    char *zoo_ip = NULL;
-    char *zoo_port = NULL;
+    // char *zoo_ip = NULL;
+    // char *zoo_port = NULL;
 
-    // Use strtok to split the string at the ':'
-    char *token = strtok(zookeeper_info, ":");
+    // // Use strtok to split the string at the ':'
+    // char *token = strtok(zookeeper_info, ":");
     
-    if (token != NULL) {
-        zoo_ip = strdup(token); // Duplicate the zoo_ip
-        token = strtok(NULL, ":");
-        if (token != NULL) {
-            zoo_port = token;
-        } else {
-            free(zoo_ip); // Free the zoo_ip if port is missing
-            return NULL;
-        }
-    } else {
-        return NULL;
-    }
+    // if (token != NULL) {
+    //     zoo_ip = strdup(token); // Duplicate the zoo_ip
+    //     token = strtok(NULL, ":");
+    //     if (token != NULL) {
+    //         zoo_port = token;
+    //     } else {
+    //         free(zoo_ip); // Free the zoo_ip if port is missing
+    //         return;
+    //     }
+    // } else {
+    //     return;
+    // }
 
     //Get the zoo nodes with server info
     //int zoo_get_children(zhandle_t *zh, const char *path, int watch, struct String_vector *children);
     struct String_vector children;
 
-    int ret = zoo_get_children(zh, zoo_path, 0, children);
+    int ret = zoo_get_children(zh, zoo_path, 0, &children);
 
     if(ret == ZOK && children.count > 0){
         
@@ -151,22 +152,22 @@ void get_read_write_servers(struct rtable_t* write, struct rtable_t* read, char*
         char tailChildPath[256];
         snprintf(tailChildPath, sizeof(tailChildPath), "%s/%s", zoo_path, children.data[children.count - 1]);
 
-        char* tailBuffer[128];
-        char* headBuffer[128];
+        char tailBuffer[128];
+        char headBuffer[128];
         int bufferLen = sizeof(tailBuffer);
         
-        char* tailServer = zoo_get(zh, tailChildPath, 0, tailBuffer, &bufferLen, NULL);
-        char* headServer = zoo_get(zh, headChildPath, 0, headBuffer, &bufferLen, NULL);
+        zoo_get(zh, tailChildPath, 0, tailBuffer, &bufferLen, NULL);
+        zoo_get(zh, headChildPath, 0, headBuffer, &bufferLen, NULL);
 
         // Conecta ao servidor de escrita
-        write = rtableconnect(headServer);
+        write_rtable = rtable_connect(headBuffer);
         if (write == NULL) {
             fprintf(stderr, "Falha ao conectar ao servidor\n");
             exit(1);
         }
 
         // Conecta ao servidor de leitura
-        read = rtable_connect(tailServer);
+        read_rtable = rtable_connect(tailBuffer);
         if (read == NULL) {
             fprintf(stderr, "Falha ao conectar ao servidor\n");
             exit(1);
@@ -186,11 +187,10 @@ int main(int argc, char *argv[]) {
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, client_quit);
 
-    //função para ir buscar head e tail, e registar as rtables
-    struct rtable_t* write_rtable;
-    struct rtable_t* read_rtable;
+    zh = zookeeper_init(argv[1], NULL, 10000, 0, 0, 0)
 
-    void get_read_write_servers(write_rtable, read_rtable, argv[1]);
+    //função para ir buscar head e tail, e registar as rtables
+    void get_read_write_servers();
 
     char input[256];
     char *token;
