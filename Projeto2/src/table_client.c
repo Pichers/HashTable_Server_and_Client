@@ -26,69 +26,41 @@ static char *watcher_ctx = "ZooKeeper Data Watcher";
 
 typedef struct String_vector zoo_string;
 
-// void my_watcher_func(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx)
-// {
-//     if (type == ZOO_SESSION_EVENT){
-//         if (state == ZOO_CONNECTED_STATE){
-//             is_connected = 1;
-//         }
-//         else {
-//             is_connected = 0;
-//         }
-//     }
-// }
+/**
+* Watcher function for connection state change events
+*/
+void connection_watcher(zhandle_t *zzh, int type, int state, const char *path, void* context) {
+	if (type == ZOO_SESSION_EVENT) {
+		if (state == ZOO_CONNECTED_STATE) {
+			is_connected = 1; 
+		} else {
+			is_connected = 0; 
+		}
+	} 
+}
 
-// static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx)
-// {
-//     zoo_string *children_list = (zoo_string *)malloc(sizeof(zoo_string));
-//     if (state == ZOO_CONNECTED_STATE)
-//     {
-//         if (type == ZOO_CHILD_EVENT)
-//         {
-//             /* Get the updated children and reset the watch */
-//             if (ZOK != zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list))
-//             {
-//                 fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
-//             }
+/**
+* Data Watcher function for /MyData node
+*/
+static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx) {
+	zoo_string* children_list =	(zoo_string *) malloc(sizeof(zoo_string));
+	int zoo_data_len = ZDATALEN;
+	if (state == ZOO_CONNECTED_STATE)	 {
+		if (type == ZOO_CHILD_EVENT) {
+	 	   /* Get the updated children and reset the watch */ 
+ 			if (ZOK != zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list)) {
+ 				fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
+ 			} 
 
-//             switch (children_list->count)
-//             {
-//             case 0:
-//                 if (rtable != NULL)
-//                 {
-//                     if (rtable_disconnect(rtable) < 0)
-//                     {
-//                         exit(-1);
-//                     }
-//                     rtable = NULL;
-//                 }
-//                 break;
-//             case 1:
-//                 if (ZNONODE == zoo_exists(zh, "/kvstore/primary", 0, NULL))
-//                 {
-//                     int primaryIPLen = 256;
-//                     char primaryIP[256] = "";
-//                     sleep(1);
-//                     if (ZOK != zoo_get(zh, "/kvstore/primary", 0, primaryIP, &primaryIPLen, NULL))
-//                     {
-//                         printf("ERRO A IR BUSCAR DATA SWITCH 1 FILHO PRIMARY\n");
-//                         client_quit();
-//                         exit(-1);
-//                     }
-//                     if ((rtable = rtable_connect(primaryIP)) == NULL)
-//                     {
-//                         exit(-1);
-//                     } // Ligação ao servidor!
-//                 }
-//                 break;
-//             default:
-//                 //DO NOTHING
-//                 break;
-//             }
-//             free(children_list);
-//         }
-//     }
-// }
+            /////////////////
+			get_read_write_servers();
+            /////////////////////
+
+			fprintf(stderr, "\n=== done ===\n");
+		 } 
+	 }
+	 free(children_list);
+}
 
 void help() {
         printf("Comandos disponíveis:\n");
@@ -115,28 +87,6 @@ void client_quit(){
 }
 
 void get_read_write_servers(){
-
-    // if (zookeeper_info == NULL)
-    //     return;
-
-    // char *zoo_ip = NULL;
-    // char *zoo_port = NULL;
-
-    // // Use strtok to split the string at the ':'
-    // char *token = strtok(zookeeper_info, ":");
-    
-    // if (token != NULL) {
-    //     zoo_ip = strdup(token); // Duplicate the zoo_ip
-    //     token = strtok(NULL, ":");
-    //     if (token != NULL) {
-    //         zoo_port = token;
-    //     } else {
-    //         free(zoo_ip); // Free the zoo_ip if port is missing
-    //         return;
-    //     }
-    // } else {
-    //     return;
-    // }
 
     //Get the zoo nodes with server info
     //int zoo_get_children(zhandle_t *zh, const char *path, int watch, struct String_vector *children);
@@ -187,15 +137,38 @@ int main(int argc, char *argv[]) {
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, client_quit);
 
-    zh = zookeeper_init(argv[1], NULL, 10000, 0, 0, 0);
+    zh = zookeeper_init(argv[1], connection_watcher, 10000, 0, 0, 0);
 
     //função para ir buscar head e tail, e registar as rtables
-    void get_read_write_servers();
+    get_read_write_servers();
 
     char input[256];
     char *token;
     help();
     while (1) {
+        ///////////////////////////////////////////
+        //----------TAKEN FROM EXAMPLE-----------//
+        if (is_connected) {
+			if (ZNONODE == zoo_exists(zh, root_path, 0, NULL)) {
+				if (ZOK == zoo_create( zh, root_path, NULL, -1, & ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0)) {
+					fprintf(stderr, "%s created!\n", root_path);
+				} else {
+					fprintf(stderr,"Error Creating %s!\n", root_path);
+					exit(EXIT_FAILURE);
+				} 
+			}	
+			if (ZOK != zoo_wget_children(zh, root_path, &child_watcher, watcher_ctx, children_list)) {
+				fprintf(stderr, "Error setting watch at %s!\n", root_path);
+			}
+			fprintf(stderr, "\n=== main znode listing === [ %s ]", root_path); 
+			for (int i = 0; i < children_list->count; i++)  {
+				fprintf(stderr, "\n(%d): %s", i+1, children_list->data[i]);
+			}
+			fprintf(stderr, "\n=== main done ===\n");
+			pause(); 
+		}
+        ///////////////////////////////////////////
+
         printf("Digite um comando: ");
 
         fgets(input, sizeof(input), stdin);
