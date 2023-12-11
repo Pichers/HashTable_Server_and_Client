@@ -12,6 +12,7 @@
 #include "network_server.h"
 #include "mutex-private.h"
 #include "table_skel.h"
+#include "entry.h"
 #include "stats.h"
 #include <zookeeper/zookeeper.h>
 
@@ -30,6 +31,35 @@ zhandle_t *zh;
 int is_connected;
 static char *watcher_ctx = "ZooKeeper Data Watcher";
 char *zoo_path = "/chain";
+int pos = -1;
+
+
+
+void create_current_znode(zhandle_t *zh) {
+    // check if /chain exists
+    if (ZNONODE == zoo_exists(zh, zoo_path, 0, NULL)) {
+        if(ZNONODE == zoo_create(zh, zoo_path, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0)) {
+            fprintf(stderr, "Error creating znode in ZooKeeper: %d\n", zoo_path);
+            exit(EXIT_FAILURE);
+        }
+    }
+    sleep(3);
+
+    char path_buffer[120] = "";
+    strcat(path_buffer, zoo_path);
+    strcat(path_buffer, "/node");
+    int path_buffer_len = sizeof(path_buffer);
+    malloc(path_buffer_len);
+    
+    if (ZOK != zoo_create(zh, path_buffer, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, ZOO_SEQUENCE, path_buffer, path_buffer_len)) {
+        fprintf(stderr, "Error creating znode in ZooKeeper: %d\n", path_buffer);
+        exit(EXIT_FAILURE);
+    }
+    sleep(3);
+    current = path_buffer;
+}
+
+
 
 
 void connection(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx){
@@ -102,17 +132,7 @@ int resetTable(struct table_t* table){
 
 void child_watcher(){
     if (is_connected) {
-        zoo_string *children_list_aux = (zoo_string *) malloc(sizeof(zoo_string));
-        if (children_list_aux == NULL) {
-            printf("Error allocating memory for children_list!\n");
-            return;
-        }
-        if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list_aux)) {
-            printf("Error listing children of node %s!\n", zoo_path);
-            return;
-        }
-
-        if(children_list_aux->count == 0){
+        if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
             printf("Error listing children of node %s!\n", zoo_path);
             return;
         }
@@ -122,20 +142,36 @@ void child_watcher(){
             return;
         }
 
-        if(strcmp(children_list_aux->data[0], children_list->data[0]) != 0){
-            printf("Error listing children of node %s!\n", zoo_path);
-            return;
+        if (children_list->count > 1) {
+            //get current server position
+            for (int i = 0; i < children_list->count; i++) {
+                if (strcmp(children_list->data[i], current) == 0) {
+                    pos = i;
+                    break;
+                }
+            }
+            if (pos == -1) {
+                printf("Error getting current server position!\n");
+                return;
+            }      
+
+
+            //get next server if exists
+            if (pos == children_list->count - 1) {
+                next = "";
+            } else {
+                next = children_list->data[pos+1];
+            }
+            // char next_server_path[120] = "";
+            // strcat(next_server_path, zoo_path);
+            // strcat(next_server_path, "/");
+            // strcat(next_server_path, children_list->data[pos+1]);   
+        } else {
+            pos = 0;
+            next = "";
         }
 
-        if(children_list_aux->count > 1){
-            next = children_list_aux->data[1];
-        }else{
-            next = NULL;
-        }
 
-        current = children_list_aux->data[0];
-
-        children_list = children_list_aux;
     }
 
 }
@@ -242,7 +278,9 @@ int network_server_init(short port, char* ZKADDR){
 	    exit(EXIT_FAILURE);
 	}
     sleep(3);
-    current = ZK_node_init(serverADDR);
+    // current = inicializar o current
+    create_current_znode(zh);
+
 
 
     if (is_connected) {
@@ -274,13 +312,6 @@ int network_server_init(short port, char* ZKADDR){
             return -1;
         }
     }
-
-
-
-
-
-
-
 
 
 
