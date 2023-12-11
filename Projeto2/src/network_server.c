@@ -12,6 +12,7 @@
 #include "network_server.h"
 #include "mutex-private.h"
 #include "table_skel.h"
+#include "entry.h"
 #include "network_client.h"
 #include "stats.h"
 #include <zookeeper/zookeeper.h>
@@ -24,17 +25,42 @@ struct thread_args{
 
 
 typedef struct String_vector zoo_string; 
-zoo_string* children_list; 
-char* current;
-char* next;
+zoo_string* children_list;
 zhandle_t *zh;
 int is_connected;
 static char *watcher_ctx = "ZooKeeper Data Watcher";
 char *zoo_path = "/chain";
+int pos = -1;
 
 struct rtable_t* next_server;
 char* node_id;
 char* next_node_id;
+
+
+
+void create_current_znode(zhandle_t *zh) {
+    // check if /chain exists
+    if (ZNONODE == zoo_exists(zh, zoo_path, 0, NULL)) {
+        if(ZNONODE == zoo_create(zh, zoo_path, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0)) {
+            fprintf(stderr, "Error creating znode in ZooKeeper: %d\n", zoo_path);
+            exit(EXIT_FAILURE);
+        }
+    }
+    sleep(3);
+
+    char path_buffer[120] = "";
+    strcat(path_buffer, zoo_path);
+    strcat(path_buffer, "/node");
+    int path_buffer_len = sizeof(path_buffer);
+    malloc(path_buffer_len);
+    
+    if (ZOK != zoo_create(zh, path_buffer, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, ZOO_SEQUENCE, path_buffer, path_buffer_len)) {
+        fprintf(stderr, "Error creating znode in ZooKeeper: %d\n", path_buffer);
+        exit(EXIT_FAILURE);
+    }
+    sleep(3);
+    node_id = path_buffer;
+}
 
 void connection(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx){
     if (type == ZOO_SESSION_EVENT){
@@ -59,8 +85,46 @@ void getIP (int socket_fd, char *ip_address){
     }
 }
 
-int resetTable(){
-    
+int resetTable(struct table_t* table){
+    if (is_connected && pos > 0){
+        char prev_server_path[120] = "";
+        strcat(prev_server_path, zoo_path);
+        strcat(prev_server_path, "/");
+        strcat(prev_server_path, children_list->data[pos-1]);
+        char prevIP[INET_ADDRSTRLEN];
+        int prevIP_len = sizeof(prevIP);
+        if (ZOK != zoo_get(zh, prev_server_path, 0, prevIP, &prevIP_len, NULL)) {
+            printf("Error getting data of node %s!\n", prev_server_path);
+            return -1;
+        }
+        //previne que o servidor se desligue
+        signal(SIGPIPE, SIG_IGN);
+        
+        struct rtable_t *prevServer = rtable_connect(prevIP);
+        if (prevServer == NULL) {
+            printf("Error connecting to server %s!\n", prevIP);
+            return -1;
+        }
+        struct entry_t** entries = table_get_entries(prevServer);
+        if (entries == NULL) {
+            printf("Error getting entries from server %s!\n", prevIP);
+            return -1;
+        }
+        int entries_size = rtable_size(prevServer);
+
+        for(int i = 0; i < entries_size; i++){
+            if(table_put(table, entries[i]->key, entries[i]->value) == -1){
+                printf("Error putting entry in table!\n");
+                return -1;
+            }
+        }
+        rtable_free_entries(entries);
+
+
+
+
+
+    }
     return 0;
 }
 
@@ -119,16 +183,6 @@ void child_watcher(){
         //     printf("Error listing children of node %s!\n", zoo_path);
         //     return;
         // }
-
-
-
-        if(children_list->count > 1){
-            next = children_list->data[1];
-        }else{
-            next = NULL;
-        }
-
-        current = children_list->data[0];
     }
 
 }
@@ -235,7 +289,9 @@ int network_server_init(short port, char* ZKADDR){
 	    exit(EXIT_FAILURE);
 	}
     sleep(3);
-    current = ZK_node_init(serverADDR);
+    // node_id = inicializar o node_id
+    create_current_znode(zh);
+
 
 
     if (is_connected) {
@@ -270,14 +326,7 @@ int network_server_init(short port, char* ZKADDR){
 
 
 
-
-
-
-
-
-
-
-    next = "";
+    next_node_id = "";
     return skt;
 }
 
