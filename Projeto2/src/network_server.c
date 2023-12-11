@@ -12,6 +12,7 @@
 #include "network_server.h"
 #include "mutex-private.h"
 #include "table_skel.h"
+#include "network_client.h"
 #include "stats.h"
 #include <zookeeper/zookeeper.h>
 
@@ -31,6 +32,9 @@ int is_connected;
 static char *watcher_ctx = "ZooKeeper Data Watcher";
 char *zoo_path = "/chain";
 
+struct rtable_t* next_server;
+char* node_id;
+char* next_node_id;
 
 void connection(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx){
     if (type == ZOO_SESSION_EVENT){
@@ -64,17 +68,7 @@ int resetTable(){
 
 void child_watcher(){
     if (is_connected) {
-        zoo_string *children_list_aux = (zoo_string *) malloc(sizeof(zoo_string));
-        if (children_list_aux == NULL) {
-            printf("Error allocating memory for children_list!\n");
-            return;
-        }
-        if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list_aux)) {
-            printf("Error listing children of node %s!\n", zoo_path);
-            return;
-        }
-
-        if(children_list_aux->count == 0){
+        if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
             printf("Error listing children of node %s!\n", zoo_path);
             return;
         }
@@ -84,20 +78,57 @@ void child_watcher(){
             return;
         }
 
-        if(strcmp(children_list_aux->data[0], children_list->data[0]) != 0){
-            printf("Error listing children of node %s!\n", zoo_path);
-            return;
+        char iPath[24];
+        for(int i = 0; i < children_list->count; i++){
+            snprintf(iPath, sizeof(iPath), "%s/%s", zoo_path, children_list->data[i]);
+
+            if(strcmp(iPath, node_id) == 0){
+                if(children_list->count > (i + 1)){
+                    //NEED TO ZOO_GET THIS ADRESS INSTEAD - TODO
+                    // next_node_id = children_list->data[i + 1];
+
+                    char buf[24];
+                    int bufLen = sizeof(buf);
+                    
+                    char nextPath[24];
+                    snprintf(nextPath, sizeof(iPath), "%s/%s", zoo_path, children_list->data[i + 1]);
+        
+                    //ADD ERROR HANDLING - TODO
+                    zoo_get(zh, nextPath, 0, buf, &bufLen, NULL);
+
+
+                    if(next_server){
+                        if(rtable_disconnect(next_server) == -1){
+                            printf("error disconnecting old server");
+                            return;
+                        }
+                    }
+                    //maybe works
+                    next_server = rtable_connect(nextPath);
+
+                    if(next_server == NULL){
+                        printf("error connecting to new server");
+                        return;
+                    }
+                }
+            }
+
         }
 
-        if(children_list_aux->count > 1){
-            next = children_list_aux->data[1];
+        // if(strcmp(children_list->data[0], children_list->data[0]) != 0){
+        //     printf("Error listing children of node %s!\n", zoo_path);
+        //     return;
+        // }
+
+
+
+        if(children_list->count > 1){
+            next = children_list->data[1];
         }else{
             next = NULL;
         }
 
-        current = children_list_aux->data[0];
-
-        children_list = children_list_aux;
+        current = children_list->data[0];
     }
 
 }
