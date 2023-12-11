@@ -55,8 +55,46 @@ void getIP (int socket_fd, char *ip_address){
     }
 }
 
-int resetTable(){
-    
+int resetTable(struct table_t* table){
+    if (is_connected && pos > 0){
+        char prev_server_path[120] = "";
+        strcat(prev_server_path, zoo_path);
+        strcat(prev_server_path, "/");
+        strcat(prev_server_path, children_list->data[pos-1]);
+        char prevIP[INET_ADDRSTRLEN];
+        int prevIP_len = sizeof(prevIP);
+        if (ZOK != zoo_get(zh, prev_server_path, 0, prevIP, &prevIP_len, NULL)) {
+            printf("Error getting data of node %s!\n", prev_server_path);
+            return -1;
+        }
+        //previne que o servidor se desligue
+        signal(SIGPIPE, SIG_IGN);
+        
+        struct rtable_t *prevServer = rtable_connect(prevIP);
+        if (prevServer == NULL) {
+            printf("Error connecting to server %s!\n", prevIP);
+            return -1;
+        }
+        struct entry_t** entries = table_get_entries(prevServer);
+        if (entries == NULL) {
+            printf("Error getting entries from server %s!\n", prevIP);
+            return -1;
+        }
+        int entries_size = rtable_size(prevServer);
+
+        for(int i = 0; i < entries_size; i++){
+            if(table_put(table, entries[i]->key, entries[i]->value) == -1){
+                printf("Error putting entry in table!\n");
+                return -1;
+            }
+        }
+        rtable_free_entries(entries);
+
+
+
+
+
+    }
     return 0;
 }
 
