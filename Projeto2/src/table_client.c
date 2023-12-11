@@ -52,11 +52,19 @@ void get_read_write_servers(){
         zoo_get(zh, tailChildPath, 0, tailBuffer, &bufferLen, NULL);
         zoo_get(zh, headChildPath, 0, headBuffer, &bufferLen, NULL);
 
+        if(write_rtable && rtable_disconnect(write_rtable) == -1){
+            printf("error disconnecting write rtable");
+        }
+
         // Conecta ao servidor de escrita
         write_rtable = rtable_connect(headBuffer);
         if (write_rtable == NULL) {
             fprintf(stderr, "Falha ao conectar ao servidor\n");
             exit(1);
+        }
+
+        if(read_rtable && rtable_disconnect(read_rtable) == -1){
+            printf("error disconnecting read rtable");
         }
 
         // Conecta ao servidor de leitura
