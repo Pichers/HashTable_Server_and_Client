@@ -55,6 +55,10 @@ void getIP (int socket_fd, char *ip_address){
     }
 }
 
+int resetTable(){
+    
+    return 0;
+}
 
 
 
