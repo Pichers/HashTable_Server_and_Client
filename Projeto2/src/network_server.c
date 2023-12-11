@@ -21,7 +21,15 @@ struct thread_args{
     struct stats_t* stats;
 };
 
+
+typedef struct String_vector zoo_string; 
+zoo_string* children_list; 
+char* current;
+char* next;
+zhandle_t *zh;
 int is_connected;
+static char *watcher_ctx = "ZooKeeper Data Watcher";
+char *zoo_path = "/chain";
 
 
 void connection(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx){
@@ -35,6 +43,60 @@ void connection(zhandle_t *zzh, int type, int state, const char *path, void *wat
     }
 }
 
+
+void getIP (int socket_fd, char *ip_address){
+    struct sockaddr_in addr;
+    socklen_t addr_size = sizeof(struct sockaddr_in);
+
+    if (getsockname(socket_fd, (struct sockaddr *)&addr, &addr_size) == 0){
+        inet_ntop(AF_INET, &(addr.sin_addr), ip_address, INET_ADDRSTRLEN);
+    } else {
+        printf("Error getting IP address\n");
+    }
+}
+
+
+
+
+void child_watcher(){
+    if (is_connected) {
+        zoo_string *children_list_aux = (zoo_string *) malloc(sizeof(zoo_string));
+        if (children_list_aux == NULL) {
+            printf("Error allocating memory for children_list!\n");
+            return;
+        }
+        if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list_aux)) {
+            printf("Error listing children of node %s!\n", zoo_path);
+            return;
+        }
+
+        if(children_list_aux->count == 0){
+            printf("Error listing children of node %s!\n", zoo_path);
+            return;
+        }
+
+        if(children_list->count == 0){
+            printf("Error listing children of node %s!\n", zoo_path);
+            return;
+        }
+
+        if(strcmp(children_list_aux->data[0], children_list->data[0]) != 0){
+            printf("Error listing children of node %s!\n", zoo_path);
+            return;
+        }
+
+        if(children_list_aux->count > 1){
+            next = children_list_aux->data[1];
+        }else{
+            next = NULL;
+        }
+
+        current = children_list_aux->data[0];
+
+        children_list = children_list_aux;
+    }
+
+}
 
 
 
@@ -116,6 +178,71 @@ int network_server_init(short port, char* ZKADDR){
         return -1;
     };
 
+
+    //zookeeper
+
+
+    char portaSTR[20];
+    sprintf(portaSTR, "%d", port);
+
+    char ip[INET_ADDRSTRLEN];
+    getIP(skt, ip);
+
+    char serverADDR[120] = "";
+    strcat(serverADDR,ip); 
+    strcat(serverADDR,":");
+    strcat(serverADDR,portaSTR);
+
+
+    zh = zookeeper_init(ZKADDR, connection, 2000, 0, NULL, 0);
+	if (zh == NULL)	{
+		fprintf(stderr, "Error connecting to ZooKeeper server!\n");
+	    exit(EXIT_FAILURE);
+	}
+    sleep(3);
+    current = ZK_node_init(serverADDR);
+
+
+    if (is_connected) {
+
+
+        children_list =	(zoo_string *) malloc(sizeof(zoo_string));
+        if (children_list == NULL) {
+            printf("Error allocating memory for children_list!\n");
+            return -1;
+        }
+        if (ZNONODE == zoo_exists(zh, zoo_path, 0, NULL)) {
+            printf("Path %s does not exist!\n", zoo_path);
+            return -1;
+        } 
+        if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
+            printf("Error listing children of node %s!\n", zoo_path);
+            return -1;
+        }
+
+
+        for (int i = 0; i < children_list->count; i++)  {
+            fprintf(stderr, "\n(%d): %s", i+1, children_list->data[i]);
+        }
+
+        fprintf(stderr, "\n=== done ===\n");
+
+        if(children_list == NULL || children_list->count == 0){
+            printf("Error listing children of node %s!\n", zoo_path);
+            return -1;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    next = "";
     return skt;
 }
 
