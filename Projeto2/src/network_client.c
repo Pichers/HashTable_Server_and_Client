@@ -40,7 +40,6 @@ int write_all(int sockfd, const void *buffer, size_t size) {
 
     while (bytes_written < size) {
         result = write(sockfd, (const char *)buffer + bytes_written, size - bytes_written);
-
         if (result == -1) {
             perror("Error writing to socket");
             return -1;
@@ -130,11 +129,12 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
     }
     message_t__pack(msg, bufW);
 
-    if (write(sockfd, bufW, msg_size) < 0) {
+    if (write_all(sockfd, bufW, msg_size) < 0) {
         perror("Error sending message");
         free(bufW);
         return NULL;
     }
+
     free(bufW);
 
     // Receive short
@@ -143,6 +143,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
     if (read_all(sockfd, &response_size_short, sizeof(short)) < 0) {
         return NULL;
     }
+
 
     int response_size = ntohs(response_size_short);
 

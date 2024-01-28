@@ -26,8 +26,7 @@ static char *watcher_ctx = "ZooKeeper Data Watcher";
 
 typedef struct String_vector zoo_string;
 
-
-
+static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
 
 void get_read_write_servers(){
 
@@ -35,7 +34,7 @@ void get_read_write_servers(){
     //int zoo_get_children(zhandle_t *zh, const char *path, int watch, struct String_vector *children);
     struct String_vector children;
 
-    int ret = zoo_get_children(zh, zoo_path, 0, &children);
+    int ret = zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, &children);
 
     if(ret == ZOK && children.count > 0){
         
@@ -45,13 +44,17 @@ void get_read_write_servers(){
         char tailChildPath[256];
         snprintf(tailChildPath, sizeof(tailChildPath), "%s/%s", zoo_path, children.data[children.count - 1]);
 
-        char tailBuffer[128];
         char headBuffer[128];
+        char tailBuffer[128];
         int bufferLen = sizeof(tailBuffer);
         
-        //ADD ERROR HANDLING - TODO
-        zoo_get(zh, tailChildPath, 0, tailBuffer, &bufferLen, NULL);
-        zoo_get(zh, headChildPath, 0, headBuffer, &bufferLen, NULL);
+        if(zoo_get(zh, headChildPath, 0, headBuffer, &bufferLen, NULL) == -1){
+            printf("error getting head server");
+        }
+
+        if(zoo_get(zh, tailChildPath, 0, tailBuffer, &bufferLen, NULL) == -1){
+            printf("error getting tail server");
+        }
 
         //disconnect current write table
         if(write_rtable && rtable_disconnect(write_rtable) == -1){
@@ -61,7 +64,7 @@ void get_read_write_servers(){
         //Conecta ao servidor de escrita
         write_rtable = rtable_connect(headBuffer);
         if (write_rtable == NULL) {
-            fprintf(stderr, "Falha ao conectar ao servidor\n");
+            fprintf(stderr, "Falha ao conectar ao servidor cabeca\n");
             exit(1);
         }
 
@@ -73,7 +76,7 @@ void get_read_write_servers(){
         // Conecta ao servidor de leitura
         read_rtable = rtable_connect(tailBuffer);
         if (read_rtable == NULL) {
-            fprintf(stderr, "Falha ao conectar ao servidor\n");
+            fprintf(stderr, "Falha ao conectar ao servidor cauda\n");
             exit(1);
         }
         
@@ -115,7 +118,6 @@ static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath
 			get_read_write_servers();
             /////////////////////
 
-			fprintf(stderr, "\n=== done ===\n");
 		 } 
 	 }
 	 free(children_list);
@@ -158,7 +160,7 @@ int main(int argc, char *argv[]) {
     zh = zookeeper_init(argv[1], connection_watcher, 10000, 0, 0, 0);
     if(zh == NULL){
         printf("Error connecting to ZooKeeper\n");
-        return NULL;
+        exit(1);
     }
     sleep(3);
     //função para ir buscar head e tail, e registar as rtables
@@ -188,12 +190,6 @@ int main(int argc, char *argv[]) {
 			if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
 				fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
 			}
-			fprintf(stderr, "\n=== main znode listing === [ %s ]", zoo_path); 
-			for (int i = 0; i < children_list->count; i++)  {
-				fprintf(stderr, "\n(%d): %s", i+1, children_list->data[i]);
-			}
-			fprintf(stderr, "\n=== main done ===\n");
-			pause(); 
 		}
         ///////////////////////////////////////////
 
