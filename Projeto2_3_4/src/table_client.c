@@ -32,11 +32,17 @@ void get_read_write_servers(){
 
     //Get the zoo nodes with server info
     //int zoo_get_children(zhandle_t *zh, const char *path, int watch, struct String_vector *children);
-    struct String_vector children;
+    struct String_vector children = {};
 
+    printf("a\n");
     int ret = zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, &children);
+    printf("b\n");
+
+    printf("ret: %d\n", ret);
+    printf("count: %d\n", children.count);
 
     if(ret == ZOK && children.count > 0){
+        printf("ba\n");
         
         char headChildPath[256];
         snprintf(headChildPath, sizeof(headChildPath), "%s/%s", zoo_path, children.data[0]);
@@ -47,6 +53,7 @@ void get_read_write_servers(){
         char headBuffer[128];
         char tailBuffer[128];
         int bufferLen = sizeof(tailBuffer);
+
         
         if(zoo_get(zh, headChildPath, 0, headBuffer, &bufferLen, NULL) == -1){
             printf("error getting head server");
@@ -57,9 +64,9 @@ void get_read_write_servers(){
         }
 
         //disconnect current write table
-        if(write_rtable && rtable_disconnect(write_rtable) == -1){
-            printf("error disconnecting write rtable");
-        }
+        if(write_rtable)
+            if (rtable_disconnect(write_rtable) == -1)
+                printf("error disconnecting write rtable\n");
 
         //Conecta ao servidor de escrita
         write_rtable = rtable_connect(headBuffer);
@@ -69,9 +76,9 @@ void get_read_write_servers(){
         }
 
         //disconnect current read table
-        if(read_rtable && rtable_disconnect(read_rtable) == -1){
-            printf("error disconnecting read rtable");
-        }
+        if(read_rtable)
+            if(rtable_disconnect(read_rtable) == -1)
+                printf("error disconnecting read rtable");
 
         // Conecta ao servidor de leitura
         read_rtable = rtable_connect(tailBuffer);
@@ -79,10 +86,15 @@ void get_read_write_servers(){
             fprintf(stderr, "Falha ao conectar ao servidor cauda\n");
             exit(1);
         }
-        
+
+        //check IP
+        printf("Conectado ao servidor de escrita: %s\n", headBuffer);
+        printf("Conectado ao servidor de leitura: %s\n", tailBuffer);
+
         // Free the memory allocated by zoo_get_children
         deallocate_String_vector(&children);
     }
+    printf("c\n");
 }
 
 
@@ -164,7 +176,9 @@ int main(int argc, char *argv[]) {
     }
     sleep(3);
     //função para ir buscar head e tail, e registar as rtables
+    printf("Getting servers\n");
     get_read_write_servers();
+    printf("Got servers\n");
 
     char input[256];
     char *token;

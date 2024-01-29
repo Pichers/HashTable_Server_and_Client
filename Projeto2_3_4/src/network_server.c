@@ -57,7 +57,6 @@ int compare_func(const void *a, const void *b) {
 
 void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
 
-
 void create_current_znode(zhandle_t *zh) {
 
     // malloc(path_buffer_len);
@@ -108,7 +107,6 @@ void connection(zhandle_t *zzh, int type, int state, const char *path, void *wat
         }
     }
 }
-
 
 void getIP (int socket_fd, char *ip_address){
     fflush(stdout);
@@ -169,8 +167,6 @@ int resetTable(){
     return 0;
 }
 
-
-
 void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx){
     if(state == ZOO_CONNECTED_STATE && type == ZOO_CHILD_EVENT) {
         if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
@@ -207,6 +203,7 @@ void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void 
                     }
                     //maybe works
                     next_server = rtable_connect(buf);
+                    printf("next server: %s\n", buf);
 
                     if(next_server == NULL){
                         printf("error connecting to new server");
@@ -224,7 +221,6 @@ void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void 
     }
 
 }
-
 
 
 void* client_handler(void* arg);
@@ -350,7 +346,6 @@ int network_server_init(short port, char* ZKADDR){
 
     if (is_connected) {
 
-
         children_list =	malloc(sizeof(struct String_vector));
         if (children_list == NULL) {
             printf("Error allocating memory for children_list!\n");
@@ -453,6 +448,7 @@ void* client_handler(void* arg){
         table = args->table;
         stats = args->stats;
 
+        printf("pre receive\n");
         MessageT* msg = network_receive(client_socket);
 
         if(msg == NULL){
@@ -520,9 +516,10 @@ ssize_t receive_all(int socket, void *buffer, size_t length, int flags) {
     ssize_t n;
 
     while (total < length) {
-        n = recv(socket, (char *)buffer + total, length - total, flags);
+        n = recv(socket, buffer + total, length - total, flags);
         if (n <= 0) {
             // Handle error or connection closed by peer
+            printf("AAAAAAAAAAAAAAAAAAAAAAAa");
             return n;
         }
         total += n;
@@ -538,6 +535,7 @@ ssize_t receive_all(int socket, void *buffer, size_t length, int flags) {
  * Retorna a mensagem com o pedido ou NULL em caso de erro.
  */
 MessageT *network_receive(int client_socket) {
+    printf("CLIENT SOCKETTT! %d\n", client_socket);
     MessageT *msg;
 
     // Receive short
@@ -551,21 +549,24 @@ MessageT *network_receive(int client_socket) {
 
     // Receive message
     uint8_t *response_buffer = (uint8_t *)malloc(msg_size2);
-    if (receive_all(client_socket, response_buffer, msg_size2, 0) <= 0) {
-        printf("Error receiving response from the server Mensagem\n");
+    // if (receive_all(client_socket, response_buffer, msg_size2, 0) <= 0) {
+    //     printf("Error receiving response from the server Mensagem\n");
+    //     free(response_buffer);
+    //     return NULL;
+    // }
+    if (recv(client_socket, response_buffer, msg_size2, 0) < 0) {
+        printf("Error receiving response from the server\n");
         free(response_buffer);
         return NULL;
+    } else { // Unpack the received message
+        msg = message_t__unpack(NULL, msg_size2, response_buffer);
+        if (msg == NULL) {
+            fprintf(stderr, "Error unpacking the request message.\n");
+            message_t__free_unpacked(msg, NULL);
+            free(response_buffer);
+            return NULL;
+        }
     }
-
-    // Unpack the received message
-    msg = message_t__unpack(NULL, msg_size2, response_buffer);
-    if (msg == NULL) {
-        fprintf(stderr, "Error unpacking the request message.\n");
-        message_t__free_unpacked(msg, NULL);
-        free(response_buffer);
-        return NULL;
-    }
-
     free(response_buffer);
     return msg;
 }
