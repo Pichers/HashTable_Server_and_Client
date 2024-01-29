@@ -307,6 +307,7 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
     msg.c_type = MESSAGE_T__C_TYPE__CT_NONE;
 
     MessageT* ret = network_send_receive(rtable, &msg);
+
     if(ret == NULL){
         printf("Error sending message\n");
         return NULL;

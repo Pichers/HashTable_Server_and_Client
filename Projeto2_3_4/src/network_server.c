@@ -16,6 +16,10 @@
 #include "network_client.h"
 #include "stats.h"
 #include <zookeeper/zookeeper.h>
+#include "client_stub.h"
+#include "network_client.h"
+
+int resetTable();
 
 struct thread_args{
     int client_socket;
@@ -24,42 +28,74 @@ struct thread_args{
 };
 
 
-typedef struct String_vector zoo_string; 
-zoo_string* children_list;
+// typedef struct String_vector zoo_string; 
+struct String_vector* children_list;
 zhandle_t *zh;
 int is_connected;
 static char *watcher_ctx = "ZooKeeper Data Watcher";
 char *zoo_path = "/chain";
-int pos = -1;
 
 struct rtable_t* next_server;
 char* node_id;
 char* next_node_id;
+char serverADDR[120] = "";
 
+// int  compare_func(const void *a, const void *b) {
+//     const char *nodeA = *(const char **)a;
+//     const char *nodeB = *(const char **)b;
+    
+//     int nodeA_int = atoi(strrchr(nodeA, 'e'));
+//     int nodeB_int = atoi(strrchr(nodeB, 'e'));
+//     return nodeA_int - nodeB_int;
+
+// }
+
+
+int compare_func(const void *a, const void *b) {
+    return strcmp(*(const char **)a, *(const char **)b);
+}
+
+void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
 
 
 void create_current_znode(zhandle_t *zh) {
-    // check if /chain exists
+
+    // malloc(path_buffer_len);
     if (ZNONODE == zoo_exists(zh, zoo_path, 0, NULL)) {
-        if(ZNONODE == zoo_create(zh, zoo_path, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, 0, NULL, 0)) {
-            fprintf(stderr, "Error creating znode in ZooKeeper: %d\n", zoo_path);
+        int length = 1024;
+        if(ZNONODE == zoo_create(zh, zoo_path, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, 0 , NULL, length)) {
+            fprintf(stderr, "Error creating znode in ZooKeeper: %s\n", zoo_path);
             exit(EXIT_FAILURE);
         }
     }
-    sleep(3);
+    // sleep(3);
 
     char path_buffer[120] = "";
     strcat(path_buffer, zoo_path);
     strcat(path_buffer, "/node");
     int path_buffer_len = sizeof(path_buffer);
-    malloc(path_buffer_len);
-    
-    if (ZOK != zoo_create(zh, path_buffer, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, ZOO_SEQUENCE, path_buffer, path_buffer_len)) {
-        fprintf(stderr, "Error creating znode in ZooKeeper: %d\n", path_buffer);
+
+    if (ZOK != zoo_create(zh, "/chain/node", serverADDR, strlen(serverADDR) + 1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL | ZOO_SEQUENCE, path_buffer, path_buffer_len)) {
+        printf("Error creating znode in ZooKeeper: %s\n", path_buffer);
+        fprintf(stderr, "Error creating znode in ZooKeeper: %s\n", path_buffer);
         exit(EXIT_FAILURE);
     }
     sleep(3);
-    node_id = path_buffer;
+
+
+    free(children_list);
+    children_list =	malloc(sizeof(struct String_vector));
+    if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list))  {
+        printf("Error listing children of node 2 %s!\n", zoo_path);
+        exit(EXIT_FAILURE);
+    }
+    if(children_list != NULL && children_list->count >= 1){
+        qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
+    }
+    if(children_list->count > 1){
+        resetTable();
+    }
+    node_id = strdup(path_buffer);
 }
 
 void connection(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx){
@@ -75,9 +111,11 @@ void connection(zhandle_t *zzh, int type, int state, const char *path, void *wat
 
 
 void getIP (int socket_fd, char *ip_address){
+    fflush(stdout);
     struct sockaddr_in addr;
     socklen_t addr_size = sizeof(struct sockaddr_in);
 
+    fflush(stdout);
     if (getsockname(socket_fd, (struct sockaddr *)&addr, &addr_size) == 0){
         inet_ntop(AF_INET, &(addr.sin_addr), ip_address, INET_ADDRSTRLEN);
     } else {
@@ -85,18 +123,22 @@ void getIP (int socket_fd, char *ip_address){
     }
 }
 
-int resetTable(struct table_t* table){
-    if (is_connected && pos > 0){
+int resetTable(){
+    fflush(stdout);
+    if (is_connected){
+
         char prev_server_path[120] = "";
         strcat(prev_server_path, zoo_path);
         strcat(prev_server_path, "/");
-        strcat(prev_server_path, children_list->data[pos-1]);
+        strcat(prev_server_path, children_list->data[children_list->count-2]);
         char prevIP[INET_ADDRSTRLEN];
         int prevIP_len = sizeof(prevIP);
+
         if (ZOK != zoo_get(zh, prev_server_path, 0, prevIP, &prevIP_len, NULL)) {
             printf("Error getting data of node %s!\n", prev_server_path);
             return -1;
         }
+
         //previne que o servidor se desligue
         signal(SIGPIPE, SIG_IGN);
         
@@ -105,7 +147,8 @@ int resetTable(struct table_t* table){
             printf("Error connecting to server %s!\n", prevIP);
             return -1;
         }
-        struct entry_t** entries = table_get_entries(prevServer);
+        struct entry_t** entries = rtable_get_table(prevServer);   
+
         if (entries == NULL) {
             printf("Error getting entries from server %s!\n", prevIP);
             return -1;
@@ -113,34 +156,29 @@ int resetTable(struct table_t* table){
         int entries_size = rtable_size(prevServer);
 
         for(int i = 0; i < entries_size; i++){
-            if(table_put(table, entries[i]->key, entries[i]->value) == -1){
+
+            if(rtable_put(prevServer, entries[i]) == -1){
                 printf("Error putting entry in table!\n");
+                
                 return -1;
             }
         }
         rtable_free_entries(entries);
-
-
-
-
-
+        rtable_disconnect(prevServer);
     }
     return 0;
 }
 
 
 
-void child_watcher(){
-    if (is_connected) {
+void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx){
+    if(state == ZOO_CONNECTED_STATE && type == ZOO_CHILD_EVENT) {
         if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
-            printf("Error listing children of node %s!\n", zoo_path);
+            printf("Error listing children of node 1 %s!\n", zoo_path);
             return;
         }
-
-        if(children_list->count == 0){
-            printf("Error listing children of node %s!\n", zoo_path);
-            return;
-        }
+        qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
+        
 
         char iPath[24];
         for(int i = 0; i < children_list->count; i++){
@@ -168,7 +206,7 @@ void child_watcher(){
                         }
                     }
                     //maybe works
-                    next_server = rtable_connect(nextPath);
+                    next_server = rtable_connect(buf);
 
                     if(next_server == NULL){
                         printf("error connecting to new server");
@@ -179,10 +217,10 @@ void child_watcher(){
 
         }
 
-        // if(strcmp(children_list->data[0], children_list->data[0]) != 0){
-        //     printf("Error listing children of node %s!\n", zoo_path);
-        //     return;
-        // }
+        for (int i = 0; i < children_list->count; i++)
+            fprintf(stderr, "\n(%d): %s", i+1, children_list->data[i]);
+
+        fprintf(stderr, "\n=== done ===\n");
     }
 
 }
@@ -232,8 +270,12 @@ void change_connected(int change, struct stats_t* stats){
 int network_server_init(short port, char* ZKADDR){
     int skt;
 
-    if(port < 0)
+    printf("port: %d\n", port);
+    fflush(stdout);
+    if(port < 0){
+        printf("Porto inválido");
         return -1;
+    }
     
     if ((skt = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
         printf("Erro ao criar socket");
@@ -277,10 +319,13 @@ int network_server_init(short port, char* ZKADDR){
     char ip[INET_ADDRSTRLEN];
     getIP(skt, ip);
 
-    char serverADDR[120] = "";
+    printf("%s\n", ip);
+
+
     strcat(serverADDR,ip); 
     strcat(serverADDR,":");
     strcat(serverADDR,portaSTR);
+    strcat(serverADDR,"\0");
 
 
     zh = zookeeper_init(ZKADDR, connection, 2000, 0, NULL, 0);
@@ -288,16 +333,25 @@ int network_server_init(short port, char* ZKADDR){
 		fprintf(stderr, "Error connecting to ZooKeeper server!\n");
 	    exit(EXIT_FAILURE);
 	}
-    sleep(3);
+    sleep(5);
     // node_id = inicializar o node_id
+
+
     create_current_znode(zh);
 
+    if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list))  {
+        printf("Error listing children of node 2 %s!\n", zoo_path);
+        return -1;
+    }
 
+    if(children_list != NULL && children_list->count > 1){
+        qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
+    }
 
     if (is_connected) {
 
 
-        children_list =	(zoo_string *) malloc(sizeof(zoo_string));
+        children_list =	malloc(sizeof(struct String_vector));
         if (children_list == NULL) {
             printf("Error allocating memory for children_list!\n");
             return -1;
@@ -307,9 +361,10 @@ int network_server_init(short port, char* ZKADDR){
             return -1;
         } 
         if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
-            printf("Error listing children of node %s!\n", zoo_path);
+            printf("Error listing children of node 3 %s!\n", zoo_path);
             return -1;
         }
+        qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
 
 
         for (int i = 0; i < children_list->count; i++)  {
@@ -318,10 +373,10 @@ int network_server_init(short port, char* ZKADDR){
 
         fprintf(stderr, "\n=== done ===\n");
 
-        if(children_list == NULL || children_list->count == 0){
-            printf("Error listing children of node %s!\n", zoo_path);
-            return -1;
-        }
+        // if(children_list == NULL || children_list->count == 0){
+        //     printf("Error listing children of node 4 %s!\n", zoo_path);
+        //     return -1;
+        // }
     }
 
 
@@ -404,11 +459,41 @@ void* client_handler(void* arg){
             close(client_socket);
             break;
         }
+
+
         if(invoke(msg, table, stats) < 0){
             close(client_socket);
             connected_clients(stats, -1);
             message_t__free_unpacked(msg, NULL);
             break;
+        }
+        if(msg->opcode == MESSAGE_T__OPCODE__OP_PUT+1){
+        
+            EntryT* e = msg->entry;
+
+            char* dataValue = malloc(e->value.len + 1);
+            if(dataValue == NULL){
+                return NULL;
+            }
+
+
+            memcpy(dataValue, e->value.data, e->value.len);
+            dataValue[e->value.len] = '\0';
+
+            char* dataValueDup = strdup(dataValue);
+            struct data_t* data = data_create(e->value.len, dataValueDup);
+
+            free(dataValue);
+        
+
+            char* keyDup = strdup(e->key);
+            struct entry_t* entry = entry_create(keyDup, data);
+
+            rtable_put(next_server, entry);
+
+
+        } else if(msg->opcode == MESSAGE_T__OPCODE__OP_DEL+1){
+            rtable_del(next_server, msg->key);
         }
         if(network_send(client_socket, msg) == -1){
             close(client_socket);
@@ -459,7 +544,7 @@ MessageT *network_receive(int client_socket) {
     uint16_t msg_size;
     ssize_t nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
     if (nbytes != sizeof(uint16_t) && nbytes != 0) {
-        printf("Error receiving response size from the server\n");
+        printf("Error receiving response size from the server Tamanho\n");
         return NULL;
     }
     int msg_size2 = ntohs(msg_size);
@@ -467,7 +552,7 @@ MessageT *network_receive(int client_socket) {
     // Receive message
     uint8_t *response_buffer = (uint8_t *)malloc(msg_size2);
     if (receive_all(client_socket, response_buffer, msg_size2, 0) <= 0) {
-        printf("Error receiving response from the server\n");
+        printf("Error receiving response from the server Mensagem\n");
         free(response_buffer);
         return NULL;
     }

@@ -35,8 +35,8 @@ int main(int argc, char const *argv[]){
     int n_lists = atoi(argv[2]);
 
     //iniciar a tabela com n_lists listas
-    table = table_skel_init(n_lists, porta ,(char *) argv[3]);
-    if (table == NULL) {
+    table = table_skel_init(n_lists);
+    if(table == NULL) {
         printf("Error creating table");
         exit(1);
     }

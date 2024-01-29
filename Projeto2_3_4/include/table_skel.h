@@ -11,7 +11,7 @@
  * serem usadas pela tabela mantida no servidor.
  * Retorna a tabela criada ou NULL em caso de erro.
  */
-struct table_t *table_skel_init(int n_lists, const char * port, char *addr);
+struct table_t *table_skel_init(int n_lists);
 
 /* Liberta toda a memória ocupada pela tabela e todos os recursos 
  * e outros recursos usados pelo skeleton.
