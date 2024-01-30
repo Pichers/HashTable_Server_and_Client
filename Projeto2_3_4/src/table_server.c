@@ -75,4 +75,8 @@ int main(int argc, char const *argv[]){
     return 0;
 }
 
+struct table_t* get_table(){
+    return table;
+}
+
 

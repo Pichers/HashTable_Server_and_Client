@@ -124,7 +124,7 @@ void getIP (int socket_fd, char *ip_address){
 }
 
 int resetTable(){
-    fflush(stdout);
+    printf("1\n");
     if (is_connected){
 
         char prev_server_path[120] = "";
@@ -134,37 +134,68 @@ int resetTable(){
         char prevIP[INET_ADDRSTRLEN];
         int prevIP_len = sizeof(prevIP);
 
+        printf("2\n");
+
         if (ZOK != zoo_get(zh, prev_server_path, 0, prevIP, &prevIP_len, NULL)) {
             printf("Error getting data of node %s!\n", prev_server_path);
             return -1;
         }
 
+        printf("3\n");
+
         //previne que o servidor se desligue
         signal(SIGPIPE, SIG_IGN);
+        
+        printf("31\n");
+
+        printf("prevIP: %s\n", prevIP);
         
         struct rtable_t *prevServer = rtable_connect(prevIP);
         if (prevServer == NULL) {
             printf("Error connecting to server %s!\n", prevIP);
             return -1;
         }
+
+        printf("32\n");
+
+        printf("4\n");
+        fflush(stdout);
+
         struct entry_t** entries = rtable_get_table(prevServer);   
+
+        printf("41\n");
+        fflush(stdout);
 
         if (entries == NULL) {
             printf("Error getting entries from server %s!\n", prevIP);
             return -1;
         }
+        
+        printf("5\n");
+        fflush(stdout);
+
         int entries_size = rtable_size(prevServer);
+        if(entries_size <= 0){
+            return -1;
+        }
+
+        printf("entries_size: %d\n", entries_size);
 
         for(int i = 0; i < entries_size; i++){
 
-            if(rtable_put(prevServer, entries[i]) == -1){
-                printf("Error putting entry in table!\n");
-                
-                return -1;
-            }
+            printf("aaa: %d", i);
+            fflush(stdout);
+
+            //puts each value in the new server (this)
         }
+        
+        printf("6\n");
+
         rtable_free_entries(entries);
         rtable_disconnect(prevServer);
+
+        printf("7\n");
+        fflush(stdout);
     }
     return 0;
 }
@@ -543,7 +574,12 @@ MessageT *network_receive(int client_socket) {
     // Receive short
     uint16_t msg_size;
     ssize_t nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
-    if (nbytes != sizeof(uint16_t) && nbytes != 0) {
+
+    while (nbytes == 0){
+        nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
+    }
+    
+    if (nbytes != sizeof(uint16_t)) {
         printf("Error receiving response size from the server Tamanho\n");
         return NULL;
     }
@@ -551,7 +587,7 @@ MessageT *network_receive(int client_socket) {
 
     // Receive message
     uint8_t *response_buffer = (uint8_t *)malloc(msg_size2);
-    if (receive_all(client_socket, response_buffer, msg_size2, 0) <= 0) {
+    if (receive_all(client_socket, response_buffer, msg_size2, 0) < 0) {
         printf("Error receiving response from the server Mensagem\n");
         free(response_buffer);
         return NULL;
