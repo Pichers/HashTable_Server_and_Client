@@ -19,8 +19,6 @@
 #include "client_stub.h"
 #include "network_client.h"
 
-int resetTable();
-
 struct thread_args{
     int client_socket;
     struct table_t* table;
@@ -40,23 +38,11 @@ char* node_id;
 char* next_node_id;
 char serverADDR[120] = "";
 
-// int  compare_func(const void *a, const void *b) {
-//     const char *nodeA = *(const char **)a;
-//     const char *nodeB = *(const char **)b;
-    
-//     int nodeA_int = atoi(strrchr(nodeA, 'e'));
-//     int nodeB_int = atoi(strrchr(nodeB, 'e'));
-//     return nodeA_int - nodeB_int;
-
-// }
-
+void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
 
 int compare_func(const void *a, const void *b) {
     return strcmp(*(const char **)a, *(const char **)b);
 }
-
-void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
-
 
 void create_current_znode(zhandle_t *zh) {
 
@@ -92,9 +78,7 @@ void create_current_znode(zhandle_t *zh) {
     if(children_list != NULL && children_list->count >= 1){
         qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
     }
-    if(children_list->count > 1){
-        resetTable();
-    }
+
     node_id = strdup(path_buffer);
 }
 
@@ -123,8 +107,17 @@ void getIP (int socket_fd, char *ip_address){
     }
 }
 
-int resetTable(){
-    fflush(stdout);
+int setTable(struct table_t* table, struct stats_t* stats){
+    if(children_list == NULL){
+        printf("Null children?\n");
+        return -1;
+    }
+
+    if(children_list->count <= 1 ){
+        printf("There is no previous table to get\n");
+        return 0;
+    }
+
     if (is_connected){
 
         char prev_server_path[120] = "";
@@ -147,7 +140,7 @@ int resetTable(){
             printf("Error connecting to server %s!\n", prevIP);
             return -1;
         }
-        struct entry_t** entries = rtable_get_table(prevServer);   
+        struct entry_t** entries = rtable_get_table(prevServer);
 
         if (entries == NULL) {
             printf("Error getting entries from server %s!\n", prevIP);
@@ -156,13 +149,15 @@ int resetTable(){
         int entries_size = rtable_size(prevServer);
 
         for(int i = 0; i < entries_size; i++){
+            struct entry_t* e = entries[i];
 
-            if(rtable_put(prevServer, entries[i]) == -1){
+            if(table_put(table, e->key, e->value) == -1){
                 printf("Error putting entry in table!\n");
                 
                 return -1;
             }
         }
+
         rtable_free_entries(entries);
         rtable_disconnect(prevServer);
     }
@@ -349,7 +344,6 @@ int network_server_init(short port, char* ZKADDR){
     }
 
     if (is_connected) {
-
 
         children_list =	malloc(sizeof(struct String_vector));
         if (children_list == NULL) {
