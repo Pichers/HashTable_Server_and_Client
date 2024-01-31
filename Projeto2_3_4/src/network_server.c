@@ -25,8 +25,6 @@ struct thread_args{
     struct stats_t* stats;
 };
 
-
-// typedef struct String_vector zoo_string; 
 struct String_vector* children_list;
 zhandle_t *zh;
 int is_connected;
@@ -46,7 +44,7 @@ int compare_func(const void *a, const void *b) {
 
 void create_current_znode(zhandle_t *zh) {
 
-    // malloc(path_buffer_len);
+    // Create the chain if it does not exist
     if (ZNONODE == zoo_exists(zh, zoo_path, 0, NULL)) {
         int length = 1024;
         if(ZNONODE == zoo_create(zh, zoo_path, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, 0 , NULL, length)) {
@@ -54,7 +52,6 @@ void create_current_znode(zhandle_t *zh) {
             exit(EXIT_FAILURE);
         }
     }
-    // sleep(3);
 
     char path_buffer[120] = "";
     strcat(path_buffer, zoo_path);
@@ -63,7 +60,6 @@ void create_current_znode(zhandle_t *zh) {
 
     if (ZOK != zoo_create(zh, "/chain/node", serverADDR, strlen(serverADDR) + 1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL | ZOO_SEQUENCE, path_buffer, path_buffer_len)) {
         printf("Error creating znode in ZooKeeper: %s\n", path_buffer);
-        fprintf(stderr, "Error creating znode in ZooKeeper: %s\n", path_buffer);
         exit(EXIT_FAILURE);
     }
     sleep(3);
@@ -132,10 +128,6 @@ int setTable(struct table_t* table){
         //previne que o servidor se desligue
         signal(SIGPIPE, SIG_IGN);
         
-        printf("31\n");
-
-        printf("prevIP: %s\n", prevIP);
-        
         struct rtable_t *prevServer = rtable_connect(prevIP);
         if (prevServer == NULL) {
             printf("Error connecting to server %s!\n", prevIP);
@@ -147,16 +139,11 @@ int setTable(struct table_t* table){
             printf("Error getting entries from server %s!\n", prevIP);
             return -1;
         }
-        
-        printf("5\n");
-        fflush(stdout);
 
         int entries_size = rtable_size(prevServer);
         if(entries_size <= 0){
             return -1;
         }
-
-        printf("entries_size: %d\n", entries_size);
 
         for(int i = 0; i < entries_size; i++){
             struct entry_t* e = entries[i];
@@ -178,11 +165,10 @@ int setTable(struct table_t* table){
 void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx){
     if(state == ZOO_CONNECTED_STATE && type == ZOO_CHILD_EVENT) {
         if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
-            printf("Error listing children of node 1 %s!\n", zoo_path);
+            printf("Error listing children of node %s!\n", zoo_path);
             return;
         }
         qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
-        
 
         char iPath[24];
         for(int i = 0; i < children_list->count; i++){
@@ -190,17 +176,17 @@ void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void 
 
             if(strcmp(iPath, node_id) == 0){
                 if(children_list->count > (i + 1)){
-                    //NEED TO ZOO_GET THIS ADRESS INSTEAD - TODO
-                    // next_node_id = children_list->data[i + 1];
 
                     char buf[24];
                     int bufLen = sizeof(buf);
                     
                     char nextPath[24];
                     snprintf(nextPath, sizeof(iPath), "%s/%s", zoo_path, children_list->data[i + 1]);
-        
-                    //ADD ERROR HANDLING - TODO
-                    zoo_get(zh, nextPath, 0, buf, &bufLen, NULL);
+
+                    if(ZOK != zoo_get(zh, nextPath, 0, buf, &bufLen, NULL)){
+                        printf("Error getting Zoo meta-data");
+                        return;
+                    }
 
 
                     if(next_server){
@@ -258,11 +244,12 @@ void release_stats_lock(){
 
 //handles synchronization and changes the number of connected clients according to change
 void change_connected(int change, struct stats_t* stats){
-    //aquire stats lock
+    
     aquire_stats_lock();
+    
     //critical section
     connected_clients(stats, change);
-    //release stats lock
+
     release_stats_lock();
 }
 
@@ -272,6 +259,7 @@ void change_connected(int change, struct stats_t* stats){
  */
 int network_server_init(short port, char* ZKADDR){
     int skt;
+    children_list =	malloc(sizeof(struct String_vector));
 
     if(port < 0){
         printf("Porto inválido");
@@ -310,9 +298,7 @@ int network_server_init(short port, char* ZKADDR){
         return -1;
     };
 
-
     //zookeeper
-
 
     char portaSTR[20];
     sprintf(portaSTR, "%d", port);
@@ -335,7 +321,7 @@ int network_server_init(short port, char* ZKADDR){
     create_current_znode(zh);
 
     if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list))  {
-        printf("Error listing children of node 2 %s!\n", zoo_path);
+        printf("Error listing children of node %s!\n", zoo_path);
         return -1;
     }
 
@@ -345,7 +331,6 @@ int network_server_init(short port, char* ZKADDR){
 
     if (is_connected) {
 
-        children_list =	malloc(sizeof(struct String_vector));
         if (children_list == NULL) {
             printf("Error allocating memory for children_list!\n");
             return -1;
@@ -355,7 +340,7 @@ int network_server_init(short port, char* ZKADDR){
             return -1;
         } 
         if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
-            printf("Error listing children of node 3 %s!\n", zoo_path);
+            printf("Error listing children of node %s!\n", zoo_path);
             return -1;
         }
         qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
@@ -397,7 +382,9 @@ int network_main_loop(int listening_socket, struct table_t *table, struct stats_
     fflush(stdout);
 
     while(1){ 
+        
         printf("À espera de conexão cliente\n");   
+
         // Bloqueia a espera de pedidos de conexão
         client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
 
@@ -439,7 +426,6 @@ void* client_handler(void* arg){
         table = args->table;
         stats = args->stats;
 
-        printf("pre receive\n");
         MessageT* msg = network_receive(client_socket);
 
         if(msg == NULL){
@@ -525,12 +511,11 @@ ssize_t receive_all(int socket, void *buffer, size_t length, int flags) {
  * Retorna a mensagem com o pedido ou NULL em caso de erro.
  */
 MessageT *network_receive(int client_socket) {
-    printf("CLIENT SOCKETTT! %d\n", client_socket);
     MessageT *msg;
 
     // Receive short
     uint16_t msg_size;
-    ssize_t nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
+    ssize_t nbytes;
 
     while (nbytes == 0){
         nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
@@ -548,7 +533,8 @@ MessageT *network_receive(int client_socket) {
         printf("Error receiving response from the server Mensagem\n");
         free(response_buffer);
         return NULL;
-    } else { // Unpack the received message
+    } else { 
+        // Unpack the received message
         msg = message_t__unpack(NULL, msg_size2, response_buffer);
         if (msg == NULL) {
             fprintf(stderr, "Error unpacking the request message.\n");
@@ -568,7 +554,6 @@ ssize_t send_all(int socket, const void *buffer, size_t length, int flags) {
     while (total < length) {
         n = send(socket, (char *)buffer + total, length - total, flags);
         if (n == -1) {
-            // Handle error, e.g., print an error message
             perror("send_all");
             return -1;
         }
