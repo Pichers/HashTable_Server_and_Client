@@ -20,5 +20,4 @@ Requisitos para a utilização do Projeto4 (final):
 
 Limitações de implementação:
 	Os primeiros dois servidores não podem ser inicializados em simultâneo, pelo que se deve esperar que o primeiro inicialize totalmente.
-    Não é utilizado o IP externo, pelo que é apenas possível conectar servidores dentro da própria máquina.
 

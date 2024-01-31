@@ -19,8 +19,6 @@
 #include "client_stub.h"
 #include "network_client.h"
 
-int resetTable();
-
 struct thread_args{
     int client_socket;
     struct table_t* table;
@@ -40,22 +38,11 @@ char* node_id;
 char* next_node_id;
 char serverADDR[120] = "";
 
-// int  compare_func(const void *a, const void *b) {
-//     const char *nodeA = *(const char **)a;
-//     const char *nodeB = *(const char **)b;
-    
-//     int nodeA_int = atoi(strrchr(nodeA, 'e'));
-//     int nodeB_int = atoi(strrchr(nodeB, 'e'));
-//     return nodeA_int - nodeB_int;
-
-// }
-
+void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
 
 int compare_func(const void *a, const void *b) {
     return strcmp(*(const char **)a, *(const char **)b);
 }
-
-void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
 
 void create_current_znode(zhandle_t *zh) {
 
@@ -91,9 +78,7 @@ void create_current_znode(zhandle_t *zh) {
     if(children_list != NULL && children_list->count >= 1){
         qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
     }
-    if(children_list->count > 1){
-        resetTable();
-    }
+
     node_id = strdup(path_buffer);
 }
 
@@ -109,11 +94,9 @@ void connection(zhandle_t *zzh, int type, int state, const char *path, void *wat
 }
 
 void getIP (int socket_fd, char *ip_address){
-    fflush(stdout);
     struct sockaddr_in addr;
     socklen_t addr_size = sizeof(struct sockaddr_in);
 
-    fflush(stdout);
     if (getsockname(socket_fd, (struct sockaddr *)&addr, &addr_size) == 0){
         inet_ntop(AF_INET, &(addr.sin_addr), ip_address, INET_ADDRSTRLEN);
     } else {
@@ -121,8 +104,17 @@ void getIP (int socket_fd, char *ip_address){
     }
 }
 
-int resetTable(){
-    fflush(stdout);
+int setTable(struct table_t* table){
+    if(children_list == NULL){
+        printf("Null children?\n");
+        return -1;
+    }
+
+    if(children_list->count <= 1 ){
+        printf("There is no previous table to get\n");
+        return 0;
+    }
+
     if (is_connected){
 
         char prev_server_path[120] = "";
@@ -140,32 +132,48 @@ int resetTable(){
         //previne que o servidor se desligue
         signal(SIGPIPE, SIG_IGN);
         
+        printf("31\n");
+
+        printf("prevIP: %s\n", prevIP);
+        
         struct rtable_t *prevServer = rtable_connect(prevIP);
         if (prevServer == NULL) {
             printf("Error connecting to server %s!\n", prevIP);
             return -1;
         }
-        struct entry_t** entries = rtable_get_table(prevServer);   
+        struct entry_t** entries = rtable_get_table(prevServer);
 
         if (entries == NULL) {
             printf("Error getting entries from server %s!\n", prevIP);
             return -1;
         }
+        
+        printf("5\n");
+        fflush(stdout);
+
         int entries_size = rtable_size(prevServer);
+        if(entries_size <= 0){
+            return -1;
+        }
+
+        printf("entries_size: %d\n", entries_size);
 
         for(int i = 0; i < entries_size; i++){
+            struct entry_t* e = entries[i];
 
-            if(rtable_put(prevServer, entries[i]) == -1){
+            if(table_put(table, e->key, e->value) == -1){
                 printf("Error putting entry in table!\n");
-                
                 return -1;
             }
         }
+
         rtable_free_entries(entries);
         rtable_disconnect(prevServer);
     }
     return 0;
 }
+
+
 
 void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx){
     if(state == ZOO_CONNECTED_STATE && type == ZOO_CHILD_EVENT) {
@@ -203,7 +211,6 @@ void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void 
                     }
                     //maybe works
                     next_server = rtable_connect(buf);
-                    printf("next server: %s\n", buf);
 
                     if(next_server == NULL){
                         printf("error connecting to new server");
@@ -266,8 +273,6 @@ void change_connected(int change, struct stats_t* stats){
 int network_server_init(short port, char* ZKADDR){
     int skt;
 
-    printf("port: %d\n", port);
-    fflush(stdout);
     if(port < 0){
         printf("Porto inválido");
         return -1;
@@ -315,9 +320,6 @@ int network_server_init(short port, char* ZKADDR){
     char ip[INET_ADDRSTRLEN];
     getIP(skt, ip);
 
-    printf("%s\n", ip);
-
-
     strcat(serverADDR,ip); 
     strcat(serverADDR,":");
     strcat(serverADDR,portaSTR);
@@ -329,10 +331,7 @@ int network_server_init(short port, char* ZKADDR){
 		fprintf(stderr, "Error connecting to ZooKeeper server!\n");
 	    exit(EXIT_FAILURE);
 	}
-    sleep(5);
-    // node_id = inicializar o node_id
-
-
+    sleep(3);
     create_current_znode(zh);
 
     if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list))  {
@@ -367,15 +366,7 @@ int network_server_init(short port, char* ZKADDR){
         }
 
         fprintf(stderr, "\n=== done ===\n");
-
-        // if(children_list == NULL || children_list->count == 0){
-        //     printf("Error listing children of node 4 %s!\n", zoo_path);
-        //     return -1;
-        // }
     }
-
-
-
     next_node_id = "";
     return skt;
 }
@@ -455,7 +446,6 @@ void* client_handler(void* arg){
             close(client_socket);
             break;
         }
-
 
         if(invoke(msg, table, stats) < 0){
             close(client_socket);
@@ -541,7 +531,12 @@ MessageT *network_receive(int client_socket) {
     // Receive short
     uint16_t msg_size;
     ssize_t nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
-    if (nbytes != sizeof(uint16_t) && nbytes != 0) {
+
+    while (nbytes == 0){
+        nbytes = recv(client_socket, &msg_size, sizeof(uint16_t), 0);
+    }
+    
+    if (nbytes != sizeof(uint16_t)) {
         printf("Error receiving response size from the server Tamanho\n");
         return NULL;
     }
@@ -549,13 +544,8 @@ MessageT *network_receive(int client_socket) {
 
     // Receive message
     uint8_t *response_buffer = (uint8_t *)malloc(msg_size2);
-    // if (receive_all(client_socket, response_buffer, msg_size2, 0) <= 0) {
-    //     printf("Error receiving response from the server Mensagem\n");
-    //     free(response_buffer);
-    //     return NULL;
-    // }
-    if (recv(client_socket, response_buffer, msg_size2, 0) < 0) {
-        printf("Error receiving response from the server\n");
+    if (receive_all(client_socket, response_buffer, msg_size2, 0) < 0) {
+        printf("Error receiving response from the server Mensagem\n");
         free(response_buffer);
         return NULL;
     } else { // Unpack the received message

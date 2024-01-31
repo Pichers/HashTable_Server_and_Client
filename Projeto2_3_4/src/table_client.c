@@ -34,12 +34,7 @@ void get_read_write_servers(){
     //int zoo_get_children(zhandle_t *zh, const char *path, int watch, struct String_vector *children);
     struct String_vector children = {};
 
-    printf("a\n");
     int ret = zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, &children);
-    printf("b\n");
-
-    printf("ret: %d\n", ret);
-    printf("count: %d\n", children.count);
 
     if(ret == ZOK && children.count > 0){
         printf("ba\n");
@@ -130,9 +125,9 @@ static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath
 			get_read_write_servers();
             /////////////////////
 
-		 } 
-	 }
-	 free(children_list);
+		} 
+	}
+	free(children_list);
 }
 
 void help() {
