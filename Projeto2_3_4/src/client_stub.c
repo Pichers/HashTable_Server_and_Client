@@ -59,7 +59,6 @@ struct rtable_t *rtable_connect(char *address_port) {
     }
     
     free(hostname);
-    printf("Connected to server\n");
     return rtable;
 }
 /* Termina a associação entre o cliente e o servidor, fechando a 

@@ -108,17 +108,21 @@ void getIP (int socket_fd, char *ip_address){
 }
 
 int setTable(struct table_t* table){
+    printf("1");
     if(children_list == NULL){
         printf("Null children?\n");
         return -1;
     }
+    printf("1");
 
     if(children_list->count <= 1 ){
         printf("There is no previous table to get\n");
         return 0;
     }
+    printf("1");
 
     if (is_connected){
+        printf("1");
 
         char prev_server_path[120] = "";
         strcat(prev_server_path, zoo_path);
@@ -139,7 +143,7 @@ int setTable(struct table_t* table){
         //previne que o servidor se desligue
         signal(SIGPIPE, SIG_IGN);
         
-        printf("31\n");
+        printf("3\n");
 
         printf("prevIP: %s\n", prevIP);
         
@@ -159,7 +163,7 @@ int setTable(struct table_t* table){
         fflush(stdout);
 
         int entries_size = rtable_size(prevServer);
-        if(entries_size <= 0){
+        if(entries_size < 0){
             return -1;
         }
 

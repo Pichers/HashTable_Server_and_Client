@@ -28,21 +28,26 @@ typedef struct String_vector zoo_string;
 
 static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
 
+int compare_func(const void *a, const void *b) {
+    return strcmp(*(const char **)a, *(const char **)b);
+}
+
 void get_read_write_servers(){
 
     //Get the zoo nodes with server info
-    //int zoo_get_children(zhandle_t *zh, const char *path, int watch, struct String_vector *children);
-    struct String_vector children;
+    zoo_string* children_list =	(zoo_string *) malloc(sizeof(zoo_string));
 
-    int ret = zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, &children);
+    int ret = zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list);
 
-    if(ret == ZOK && children.count > 0){
+    qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
+
+    if(ret == ZOK && children_list->count > 0){
         
         char headChildPath[256];
-        snprintf(headChildPath, sizeof(headChildPath), "%s/%s", zoo_path, children.data[0]);
+        snprintf(headChildPath, sizeof(headChildPath), "%s/%s", zoo_path, children_list->data[0]);
 
         char tailChildPath[256];
-        snprintf(tailChildPath, sizeof(tailChildPath), "%s/%s", zoo_path, children.data[children.count - 1]);
+        snprintf(tailChildPath, sizeof(tailChildPath), "%s/%s", zoo_path, children_list->data[children_list->count - 1]);
 
         char headBuffer[128];
         char tailBuffer[128];
@@ -81,7 +86,7 @@ void get_read_write_servers(){
         }
         
         // Free the memory allocated by zoo_get_children
-        deallocate_String_vector(&children);
+        free(children_list);
     }
 }
 
@@ -105,22 +110,9 @@ void connection_watcher(zhandle_t *zzh, int type, int state, const char *path, v
 * Data Watcher function for /MyData node
 */
 static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx) {
-	zoo_string* children_list =	(zoo_string *) malloc(sizeof(zoo_string));
-	// int zoo_data_len = ZDATALEN;
-	if (state == ZOO_CONNECTED_STATE)	 {
-		if (type == ZOO_CHILD_EVENT) {
-	 	   /* Get the updated children and reset the watch */ 
- 			if (ZOK != zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list)) {
- 				fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
- 			} 
-
-            /////////////////
-			get_read_write_servers();
-            /////////////////////
-
-		 } 
-	 }
-	 free(children_list);
+	if (state == ZOO_CONNECTED_STATE && type == ZOO_CHILD_EVENT){
+        get_read_write_servers();
+	}
 }
 
 void help() {

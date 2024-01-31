@@ -44,4 +44,6 @@ int network_send(int client_socket, MessageT *msg);
  */
 int network_server_close(int socket);
 
+int setTable(struct table_t* table);
+
 #endif
