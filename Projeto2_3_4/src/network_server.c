@@ -204,7 +204,6 @@ void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void 
                     }
                 }
             }
-
         }
 
         for (int i = 0; i < children_list->count; i++)
