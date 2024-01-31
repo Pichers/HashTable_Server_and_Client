@@ -48,11 +48,19 @@ int main(int argc, char const *argv[]){
         table_skel_destroy(table);
         exit(1);
     }
-    struct stats_t state = stats_t_init();
-    struct stats_t *state_ptr = &state;
+
+    struct stats_t stats = stats_t_init();
+    struct stats_t *stats_ptr = &stats;
+
+    if(setTable(table, stats_ptr) == -1){
+        printf("Error setting table");
+        table_skel_destroy(table);
+        network_server_close(skt);
+        exit(1);
+    }
 
     //chamar o main_loop
-    int loopI = network_main_loop(skt, table, state_ptr);
+    int loopI = network_main_loop(skt, table, stats_ptr);
     if(loopI == -1){
         table_skel_destroy(table);
         printf("Error in main loop");

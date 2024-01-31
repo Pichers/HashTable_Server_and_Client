@@ -31,3 +31,13 @@ void connected_clients(struct stats_t *stats, int n) {
         }
     }
 }
+
+int copyStats(struct stats_t *stats, struct stats_t *copy) {
+    if (stats && copy) {
+        copy->total_operations = stats->total_operations;
+        copy->total_time = stats->total_time;
+        copy->connected_clients = stats->connected_clients;
+        return 0;
+    }
+    return -1;
+}
