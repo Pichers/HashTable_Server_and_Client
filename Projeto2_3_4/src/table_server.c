@@ -49,15 +49,17 @@ int main(int argc, char const *argv[]){
         exit(1);
     }
 
-    struct stats_t stats = stats_t_init();
-    struct stats_t *stats_ptr = &stats;
-
-    if(setTable(table, stats_ptr) == -1){
+    //Set the table to the one in the server chain
+    if(setTable(table) == -1){
         printf("Error setting table");
         table_skel_destroy(table);
         network_server_close(skt);
         exit(1);
     }
+
+    //Initialize stats structure
+    struct stats_t stats = stats_t_init();
+    struct stats_t *stats_ptr = &stats;
 
     //chamar o main_loop
     int loopI = network_main_loop(skt, table, stats_ptr);

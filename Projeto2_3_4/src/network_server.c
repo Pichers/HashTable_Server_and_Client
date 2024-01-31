@@ -107,7 +107,7 @@ void getIP (int socket_fd, char *ip_address){
     }
 }
 
-int setTable(struct table_t* table, struct stats_t* stats){
+int setTable(struct table_t* table){
     if(children_list == NULL){
         printf("Null children?\n");
         return -1;

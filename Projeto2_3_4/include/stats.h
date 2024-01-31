@@ -21,4 +21,7 @@ void update_time(struct stats_t *stats, struct timeval start, struct timeval end
 // Function to increment or decrement the number of connected clients
 void connected_clients(struct stats_t *stats, int n);
 
+// Function to copy stats structure from stats to copy
+int copyStats(struct stats_t *stats, struct stats_t *copy);
+
 #endif /* stats_h */
