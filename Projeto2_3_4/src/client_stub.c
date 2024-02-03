@@ -164,14 +164,12 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key){
     void* dataValue = malloc(ret->value.len);
     if(dataValue == NULL){
         message_t__free_unpacked(ret, NULL);
-        // printf("Error creating data value\n");
         return NULL;
     }
     memcpy(dataValue, ret->value.data, ret->value.len);
 
     struct data_t* data = data_create(ret->value.len,dataValue);
     if(data == NULL){
-        // printf("Error creating data\n");
         message_t__free_unpacked(ret, NULL);
         return NULL;
     }
@@ -204,7 +202,6 @@ int rtable_del(struct rtable_t *rtable, char *key){
         message_t__free_unpacked(ret, NULL);
         return -1;
     }
-    // printf("opcode == error: %d\n", (ret->opcode == MESSAGE_T__OPCODE__OP_ERROR));
     if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
         message_t__free_unpacked(ret, NULL);
         return -1;

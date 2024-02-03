@@ -61,8 +61,8 @@ void create_current_znode(zhandle_t *zh) {
     strcat(path_buffer, "/node");
     int path_buffer_len = sizeof(path_buffer);
 
+
     if (ZOK != zoo_create(zh, "/chain/node", serverADDR, strlen(serverADDR) + 1, &ZOO_OPEN_ACL_UNSAFE, ZOO_EPHEMERAL | ZOO_SEQUENCE, path_buffer, path_buffer_len)) {
-        printf("Error creating znode in ZooKeeper: %s\n", path_buffer);
         fprintf(stderr, "Error creating znode in ZooKeeper: %s\n", path_buffer);
         exit(EXIT_FAILURE);
     }
@@ -94,80 +94,70 @@ void connection(zhandle_t *zzh, int type, int state, const char *path, void *wat
 }
 
 
-void getIP (int socket_fd, char *ip_address){
-    fflush(stdout);
-    struct sockaddr_in addr;
-    socklen_t addr_size = sizeof(struct sockaddr_in);
-
-    fflush(stdout);
-    if (getsockname(socket_fd, (struct sockaddr *)&addr, &addr_size) == 0){
-        inet_ntop(AF_INET, &(addr.sin_addr), ip_address, INET_ADDRSTRLEN);
-    } else {
-        printf("Error getting IP address\n");
+char* get_ip_address() {
+    char* ip_address = NULL;
+    char buffer[1024];
+    FILE* fp = popen("hostname -I", "r");
+    if (fp == NULL) {
+        return NULL;
     }
+    if (fgets(buffer, sizeof(buffer), fp) != NULL) {
+        char *token = strtok(buffer, " \t\n");
+        if (token != NULL) {
+            ip_address = strdup(token);
+        }
+    }
+    pclose(fp);
+    return ip_address;
 }
 
 int setTable(struct table_t* table){
-    printf("1");
     if(children_list == NULL){
         printf("Null children?\n");
         return -1;
     }
-    printf("1");
 
     if(children_list->count <= 1 ){
-        printf("There is no previous table to get\n");
         return 0;
     }
-    printf("1");
 
     if (is_connected){
-        printf("1");
+
+        char prevIP[INET_ADDRSTRLEN + 4];
+        int prevIP_len = sizeof(prevIP);
 
         char prev_server_path[120] = "";
         strcat(prev_server_path, zoo_path);
         strcat(prev_server_path, "/");
         strcat(prev_server_path, children_list->data[children_list->count-2]);
-        char prevIP[INET_ADDRSTRLEN];
-        int prevIP_len = sizeof(prevIP);
-
-        printf("2\n");
 
         if (ZOK != zoo_get(zh, prev_server_path, 0, prevIP, &prevIP_len, NULL)) {
             printf("Error getting data of node %s!\n", prev_server_path);
             return -1;
         }
 
-        printf("3\n");
-
         //previne que o servidor se desligue
         signal(SIGPIPE, SIG_IGN);
         
-        printf("3\n");
-
-        printf("prevIP: %s\n", prevIP);
         
         struct rtable_t *prevServer = rtable_connect(prevIP);
         if (prevServer == NULL) {
             printf("Error connecting to server %s!\n", prevIP);
             return -1;
         }
+
         struct entry_t** entries = rtable_get_table(prevServer);
 
         if (entries == NULL) {
             printf("Error getting entries from server %s!\n", prevIP);
             return -1;
         }
-        
-        printf("5\n");
-        fflush(stdout);
+
 
         int entries_size = rtable_size(prevServer);
         if(entries_size < 0){
             return -1;
         }
-
-        printf("entries_size: %d\n", entries_size);
 
         for(int i = 0; i < entries_size; i++){
             struct entry_t* e = entries[i];
@@ -181,9 +171,6 @@ int setTable(struct table_t* table){
 
         rtable_free_entries(entries);
         rtable_disconnect(prevServer);
-
-        printf("7\n");
-        fflush(stdout);
     }
     return 0;
 }
@@ -289,7 +276,6 @@ void change_connected(int change, struct stats_t* stats){
 int network_server_init(short port, char* ZKADDR){
     int skt;
 
-    printf("port: %d\n", port);
     fflush(stdout);
     if(port < 0){
         printf("Porto inválido");
@@ -329,30 +315,26 @@ int network_server_init(short port, char* ZKADDR){
     };
 
 
-    //zookeeper
-
+    //ZOOKEEPER//
+    /////////////
 
     char portaSTR[20];
     sprintf(portaSTR, "%d", port);
 
-    char ip[INET_ADDRSTRLEN];
-    getIP(skt, ip);
-
-    printf("%s\n", ip);
-
+    //gets external ip address from console comand
+    char* ip = get_ip_address();
 
     strcat(serverADDR,ip); 
     strcat(serverADDR,":");
     strcat(serverADDR,portaSTR);
     strcat(serverADDR,"\0");
 
-
     zh = zookeeper_init(ZKADDR, connection, 2000, 0, NULL, 0);
 	if (zh == NULL)	{
 		fprintf(stderr, "Error connecting to ZooKeeper server!\n");
 	    exit(EXIT_FAILURE);
 	}
-    sleep(5);
+    sleep(3);
     // node_id = inicializar o node_id
 
 
@@ -390,11 +372,6 @@ int network_server_init(short port, char* ZKADDR){
         }
 
         fprintf(stderr, "\n=== done ===\n");
-
-        // if(children_list == NULL || children_list->count == 0){
-        //     printf("Error listing children of node 4 %s!\n", zoo_path);
-        //     return -1;
-        // }
     }
 
 

@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
                 if(a == -1)
                     printf("Erro ao inserir elemento\n\n");
                 
-                printf("Inserindo elemento: %s\n\n", entry->key);
+                printf("Inserido elemento: %s\n\n", entry->key);
 
                 entry_destroy(entry);
             }
@@ -254,10 +254,10 @@ int main(int argc, char *argv[]) {
                 
                 int a = rtable_del(write_rtable, key);
                 if(a == -1){
-                    printf("Elemento nao encontrado, ou erro ao apaga-lo\n\n");
+                    printf("Elemento não encontrado, ou erro ao apagá-lo\n\n");
                 }
                 else{
-                    printf("Elemento com a chave %s apagado\n\n", key);
+                    printf("Elemento com a chave %s apagádo\n\n", key);
                 }
             }
         } else if (strcmp(token, "size") == 0) {
