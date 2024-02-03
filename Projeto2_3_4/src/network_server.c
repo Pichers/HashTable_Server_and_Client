@@ -123,7 +123,7 @@ int setTable(struct table_t* table){
 
     if (is_connected){
 
-        char prevIP[INET_ADDRSTRLEN + 4];
+        char prevIP[INET_ADDRSTRLEN + 5];
         int prevIP_len = sizeof(prevIP);
 
         char prev_server_path[120] = "";
