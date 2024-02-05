@@ -122,9 +122,12 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
 
     if(ret  == NULL){
         printf("Error sending message\n");
+        free(packedData);
         return -1;
     }  
     if(ret->opcode == MESSAGE_T__OPCODE__OP_ERROR){
+        message_t__free_unpacked(ret, NULL);
+        free(packedData);
         return -1;
     } 
     message_t__free_unpacked(ret, NULL);
