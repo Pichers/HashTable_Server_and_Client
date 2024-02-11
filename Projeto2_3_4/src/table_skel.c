@@ -16,11 +16,12 @@
 #include "stats.h"
 #include "mutex-private.h"
 
-/* Inicia o skeleton da tabela.
- * O main() do servidor deve chamar esta função antes de poder usar a
- * função invoke(). O parâmetro n_lists define o número de listas a
- * serem usadas pela tabela mantida no servidor.
- * Retorna a tabela criada ou NULL em caso de erro.
+/** 
+ * Initializes the skeleton of the table.
+ * The main() of the server should call this function before being able to use
+ * the invoke() function. The parameter n_lists defines the number of lists to
+ * be used by the table maintained on the server.
+ * Returns the created table or NULL in case of an error.
  */
 struct table_t *table_skel_init(int n_lists){
     struct table_t* table = table_create(n_lists);
@@ -31,16 +32,19 @@ struct table_t *table_skel_init(int n_lists){
     return table;
 }
 
-/* Liberta toda a memória ocupada pela tabela e todos os recursos 
- * e outros recursos usados pelo skeleton.
- * Retorna 0 (OK) ou -1 em caso de erro.
+/** 
+ * Frees all the memory occupied by the table and any resources 
+ * and other assets used by the skeleton.
+ * Returns 0 (OK) or -1 in case of an error.
  */
 int table_skel_destroy(struct table_t *table){
 
     return table_destroy(table);
 }
 
-//sets the msg values to those of an error message
+/**
+ * Sets the msg values to those of an error message
+*/
 int handleError(MessageT* msg){
     msg->opcode = MESSAGE_T__OPCODE__OP_ERROR;
 
@@ -49,7 +53,10 @@ int handleError(MessageT* msg){
     return -1;
 }
 
-//aquires the lock if needed, and waits for the counter to be greater than 0
+
+/**
+ * Aquires the lock if needed, and waits for the counter to be greater than 0
+*/
 void lock_sync(int table, int aquire){
     if(table){
         if(aquire)
@@ -68,7 +75,9 @@ void lock_sync(int table, int aquire){
     }
 }
 
-//releases the lock
+/**
+ * Releases the table or stats lock, if table arg is != 0 (isTable) or 0 (!isTable) respectively
+*/
 void release(int table){
     if(table){
         table_counter++;
@@ -82,9 +91,10 @@ void release(int table){
 }
 
 
-/* Executa na tabela table a operação indicada pelo opcode contido em msg 
- * e utiliza a mesma estrutura MessageT para devolver o resultado.
- * Retorna 0 (OK) ou -1 em caso de erro.
+/**
+ * Executes on the table 'table' the operation indicated by the opcode contained in 'msg' 
+ * and uses the same MessageT structure to return the result.
+ * Returns 0 (OK) or -1 in case of an error.
 */
 int invoke(MessageT *msg, struct table_t *table, struct stats_t *stats){
     struct timeval start_time, end_time;

@@ -19,16 +19,18 @@
 #include "client_stub.h"
 #include "network_client.h"
 
+//Structure to pass every needed argument to the thread as a single arg
 struct thread_args{
     int client_socket;
     struct table_t* table;
     struct stats_t* stats;
 };
 
-
-// typedef struct String_vector zoo_string; 
+//List of zookeeper children nodes
 struct String_vector* children_list;
+//Zookeeper handle
 zhandle_t *zh;
+
 int is_connected;
 static char *watcher_ctx = "ZooKeeper Data Watcher";
 char *zoo_path = "/chain";
@@ -40,12 +42,16 @@ char serverADDR[120] = "";
 void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
 void* client_handler(void* arg);
 
+
 int compare_func(const void *a, const void *b) {
     return strcmp(*(const char **)a, *(const char **)b);
 }
 
+/**
+ * Creates the current Zookeeper node and adds it to the chain
+*/
 void create_current_znode(zhandle_t *zh) {
-    // malloc(path_buffer_len);
+    
     if (ZNONODE == zoo_exists(zh, zoo_path, 0, NULL)) {
         int length = 1024;
         if(ZNONODE == zoo_create(zh, zoo_path, NULL, 0, &ZOO_OPEN_ACL_UNSAFE, 0 , NULL, length)) {
@@ -81,6 +87,10 @@ void create_current_znode(zhandle_t *zh) {
     node_id = strdup(path_buffer);
 }
 
+/**
+ * Verifies the zookeeper connection state.
+ * Is called everytime there is a Zookeeper event
+*/
 void connection(zhandle_t *zzh, int type, int state, const char *path, void *watcherCtx){
     if (type == ZOO_SESSION_EVENT){
         if (state == ZOO_CONNECTED_STATE){
@@ -92,7 +102,9 @@ void connection(zhandle_t *zzh, int type, int state, const char *path, void *wat
     }
 }
 
-
+/**
+ * Gets this server external IP address
+*/
 char* get_ip_address() {
     char* ip_address = NULL;
     char buffer[1024];
@@ -110,6 +122,9 @@ char* get_ip_address() {
     return ip_address;
 }
 
+/**
+ * Sets this server's table to the same as the previous server's in the chain
+*/
 int setTable(struct table_t* table){
     if(children_list == NULL){
         printf("Null children?\n");
@@ -176,6 +191,10 @@ int setTable(struct table_t* table){
     return 0;
 }
 
+/**
+ * Called whenever a Zookeeper child event is triggered.
+ * Updates the list of children, and verifies and updates the current server's connections
+*/
 void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx){
     if(state == ZOO_CONNECTED_STATE && type == ZOO_CHILD_EVENT) {
         if (ZOK != zoo_wget_children(zh, zoo_path, &child_watcher, watcher_ctx, children_list)) {
@@ -246,7 +265,9 @@ pthread_mutex_t stats_mux = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t stats_cond = PTHREAD_COND_INITIALIZER;
 int stats_counter = 1;
 
-//aquires the stats lock, and waits for cond
+/**
+ * Aquires the stats lock, and waits for cond
+*/
 void aquire_stats_lock(){
     pthread_mutex_lock(&stats_mux);
     while(stats_counter <= 0)
@@ -254,14 +275,19 @@ void aquire_stats_lock(){
     stats_counter--;
 }
 
-//releases the stats lock, and signals cond
+
+/**
+ * Releases the stats lock, and signals cond
+*/
 void release_stats_lock(){
     stats_counter++;
     pthread_cond_signal(&stats_cond);
     pthread_mutex_unlock(&stats_mux);
 }
 
-//handles synchronization and changes the number of connected clients according to change
+/**
+ * Handles synchronization and changes the number of connected clients according to change
+*/
 void change_connected(int change, struct stats_t* stats){
     //aquire stats lock
     aquire_stats_lock();
@@ -271,9 +297,10 @@ void change_connected(int change, struct stats_t* stats){
     release_stats_lock();
 }
 
-/* Função para preparar um socket de receção de pedidos de ligação
- * num determinado porto.
- * Retorna o descritor do socket ou -1 em caso de erro.
+/**
+ * Function to prepare a socket for receiving connection requests
+ * on the given port specified.
+ * Returns the socket descriptor or -1 in case of an error.
  */
 int network_server_init(short port, char* ZKADDR){
     int skt;
@@ -296,20 +323,18 @@ int network_server_init(short port, char* ZKADDR){
         return -1;
     }
 
-    // Preenche estrutura server para bind
+    //Fills the server structure to bind
     struct sockaddr_in server;
     server.sin_family = AF_INET;
-    server.sin_port = htons(port); /* port é a porta TCP */
+    server.sin_port = htons(port); /*port is the tcp port*/
     server.sin_addr.s_addr = INADDR_ANY;
 
-    // Faz bind
     if (bind(skt, (struct sockaddr *) &server, sizeof(server)) < 0){
         printf("Erro ao fazer bind");
         close(skt);
         return -1;
     };
 
-    // Faz listen
     if (listen(skt, 0) < 0){
         printf("Erro ao executar listen");
         close(skt);
@@ -323,7 +348,7 @@ int network_server_init(short port, char* ZKADDR){
     char portaSTR[20];
     sprintf(portaSTR, "%d", port);
 
-    //gets external ip address from console comand
+    //get this server's external ip address
     char* ip = get_ip_address();
 
     strcat(serverADDR,ip); 
@@ -337,8 +362,6 @@ int network_server_init(short port, char* ZKADDR){
 	    exit(EXIT_FAILURE);
 	}
     sleep(3);
-    // node_id = inicializar o node_id
-
 
     create_current_znode(zh);
 
@@ -378,15 +401,14 @@ int network_server_init(short port, char* ZKADDR){
     return skt;
 }
 
-/* A função network_main_loop() deve:
- * - Aceitar uma conexão de um cliente;
- * - Receber uma mensagem usando a função network_receive;
- * - Entregar a mensagem de-serializada ao skeleton para ser processada
-     na tabela table;
- * - Esperar a resposta do skeleton;
- * - Enviar a resposta ao cliente usando a função network_send.
- * A função não deve retornar, a menos que ocorra algum erro. Nesse
- * caso retorna -1.
+/**
+ * The network_main_loop() function should:
+ * - Accept a connection from a client;
+ * - Receive a message using the network_receive function;
+ * - Deliver the deserialized message to the skeleton to be processed in the table 'table';
+ * - Wait for the skeleton's response;
+ * - Send the response to the client using the network_send function.
+ * The function should not return unless an error occurs. In that case, it returns -1.
  */
 int network_main_loop(int listening_socket, struct table_t *table, struct stats_t *stats){
 
@@ -406,7 +428,8 @@ int network_main_loop(int listening_socket, struct table_t *table, struct stats_
     while(1){ 
         printf("À espera de conexão cliente\n");   
         fflush(stdout);
-        // Bloqueia a espera de pedidos de conexão
+        
+        //Blocks waiting for client connections
         client_socket = accept(listening_socket,(struct sockaddr *) &client, &size_client);
 
         change_connected(1, stats);
@@ -434,6 +457,9 @@ int network_main_loop(int listening_socket, struct table_t *table, struct stats_
     return -1;
 }
 
+/**
+ * Function that handles client called operations, used by the corresponding client's thread
+*/
 void* client_handler(void* arg){
     struct thread_args *args = (struct thread_args *) arg;
 
@@ -475,11 +501,7 @@ void* client_handler(void* arg){
             memcpy(dataValue, e->value.data, e->value.len);
             dataValue[e->value.len] = '\0';
 
-            //char* dataValueDup = strdup(dataValue);
-            struct data_t* data = data_create(e->value.len, dataValue);//Dup);
-
-            //free(dataValue);
-            // free(dataValueDup);
+            struct data_t* data = data_create(e->value.len, dataValue);
 
             char* keyDup = strdup(e->key);
             struct entry_t* entry = entry_create(keyDup, data);
@@ -487,7 +509,6 @@ void* client_handler(void* arg){
             rtable_put(next_server, entry);
 
             entry_destroy(entry);
-            // free(keyDup);
 
         } else if(msg->opcode == MESSAGE_T__OPCODE__OP_DEL+1){
             rtable_del(next_server, msg->key);
@@ -517,6 +538,9 @@ void* client_handler(void* arg){
     return NULL;
 }
 
+/**
+ * Given a socket and a buffer, receives everything in the socket to the buffer
+ */
 ssize_t receive_all(int socket, void *buffer, size_t length, int flags) {
     size_t total = 0;  // Total bytes received
     ssize_t n;
@@ -533,11 +557,36 @@ ssize_t receive_all(int socket, void *buffer, size_t length, int flags) {
     return total;
 }
 
-/* A função network_receive() deve:
- * - Ler os bytes da rede, a partir do client_socket indicado;
- * - De-serializar estes bytes e construir a mensagem com o pedido,
- *   reservando a memória necessária para a estrutura MessageT.
- * Retorna a mensagem com o pedido ou NULL em caso de erro.
+/**
+ * Given a socket and a buffer, sends everything in the buffer to the socket
+*/
+ssize_t send_all(int socket, const void *buffer, size_t length, int flags) {
+    size_t total = 0;  // Total bytes sent
+    ssize_t n;
+
+    while (total < length) {
+        n = send(socket, (char *)buffer + total, length - total, flags);
+        if (n == -1) {
+            // Handle error, e.g., print an error message
+            perror("send_all");
+            return -1;
+        }
+        if (n == 0) {
+            // Connection closed by peer
+            return total;
+        }
+        total += n;
+    }
+
+    return total;
+}
+
+/** 
+ * The network_receive() function should:
+ * - Read bytes from the network, starting from the indicated 'client_socket';
+ * - Deserialize these bytes and construct the message with the request,
+ *   allocating the necessary memory for the MessageT structure.
+ * Returns the message with the request or NULL in case of an error.
  */
 MessageT *network_receive(int client_socket) {
     MessageT *msg;
@@ -577,31 +626,11 @@ MessageT *network_receive(int client_socket) {
     return msg;
 }
 
-ssize_t send_all(int socket, const void *buffer, size_t length, int flags) {
-    size_t total = 0;  // Total bytes sent
-    ssize_t n;
-
-    while (total < length) {
-        n = send(socket, (char *)buffer + total, length - total, flags);
-        if (n == -1) {
-            // Handle error, e.g., print an error message
-            perror("send_all");
-            return -1;
-        }
-        if (n == 0) {
-            // Connection closed by peer
-            return total;
-        }
-        total += n;
-    }
-
-    return total;
-}
-
-/* A função network_send() deve:
- * - Serializar a mensagem de resposta contida em msg;
- * - Enviar a mensagem serializada, através do client_socket.
- * Retorna 0 (OK) ou -1 em caso de erro.
+/**
+ * The network_send() function should:
+ * - Serialize the response message contained in 'msg';
+ * - Send the serialized message through the 'client_socket'.
+ * Returns 0 (OK) or -1 in case of an error.
  */
 int network_send(int client_socket, MessageT *msg) {
     if (client_socket == -1)
@@ -636,9 +665,11 @@ int network_send(int client_socket, MessageT *msg) {
     return 0;
 }
 
-/* Liberta os recursos alocados por network_server_init(), nomeadamente
- * fechando o socket passado como argumento.
- * Retorna 0 (OK) ou -1 em caso de erro.
+
+/**
+ * Frees the resources allocated by network_server_init(), namely
+ * by closing the socket passed as an argument.
+ * Returns 0 (OK) or -1 in case of an error.
  */
 int network_server_close(int socket){
     int ret = 0;
@@ -664,7 +695,6 @@ int network_server_close(int socket){
         printf("Error closing ZooKeeper");
         ret = -1;
     }
-    free(zh);
 
     return ret;
 }

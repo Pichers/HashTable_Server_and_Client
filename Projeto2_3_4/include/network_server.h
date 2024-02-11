@@ -44,6 +44,9 @@ int network_send(int client_socket, MessageT *msg);
  */
 int network_server_close(int socket);
 
+/* Define a tabela dada para a tabela do servidor anterior na chain. the table given table to the previous server in the chain's table
+ * Retorna 0 (Ok) ou -1 (Erro)
+ */
 int setTable(struct table_t* table);
 
 #endif

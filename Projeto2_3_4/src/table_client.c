@@ -32,6 +32,9 @@ int compare_func(const void *a, const void *b) {
     return strcmp(*(const char **)a, *(const char **)b);
 }
 
+/**
+ * Gets the first and last server of the Zookeeper chain as the read and write servers respectively
+*/
 void get_read_write_servers(){
 
     //Get the zoo nodes with server info
@@ -89,10 +92,6 @@ void get_read_write_servers(){
         free(children_list);
     }
 }
-
-
-
-
 /**
 * Watcher function for connection state change events
 */
@@ -115,6 +114,9 @@ static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath
 	}
 }
 
+/**
+ * Prints all the available client comands
+ */
 void help() {
         printf("Comandos disponíveis:\n");
         printf("put <key> <data>\n");
@@ -126,7 +128,9 @@ void help() {
         printf("stats\n");
         printf("quit\n");
 }
-
+/**
+ * Closes the client, releasing all used resources
+*/
 void client_quit(){
     if(rtable_disconnect(read_rtable) == -1){
         printf("Erro ao desconectar do servidor\n\n");
@@ -139,7 +143,14 @@ void client_quit(){
     exit(0);
 }
 
-
+/**
+ * Whole client:
+ * - Receives a client's input from the console
+ * - Processes the input and sends a message to the server
+ * applying the operations in the table server,
+ * or receiving the read values.
+ * - Shows the needed information on the console.
+ */
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         fprintf(stderr, "Uso: %s <server_address:port>\n", argv[0]);

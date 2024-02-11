@@ -9,14 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Remote table, que deve conter as informações necessárias para comunicar
- * com o servidor. A definir pelo grupo em client_stub-private.h
- */
-struct rtable_t;
 
-/* Função para estabelecer uma associação entre o cliente e o servidor, 
- * em que address_port é uma string no formato <hostname>:<port>.
- * Retorna a estrutura rtable preenchida, ou NULL em caso de erro.
+/**
+ * Function to establish an association between the client and the server,
+ * where address_port is a string in the format <hostname>:<port>.
+ * Returns the filled rtable structure or NULL in case of an error.
  */
 struct rtable_t *rtable_connect(char *address_port) {
     if (address_port == NULL)
@@ -61,9 +58,11 @@ struct rtable_t *rtable_connect(char *address_port) {
     free(hostname);
     return rtable;
 }
-/* Termina a associação entre o cliente e o servidor, fechando a 
- * ligação com o servidor e libertando toda a memória local.
- * Retorna 0 se tudo correr bem, ou -1 em caso de erro.
+
+/** 
+ * Terminates the association between the client and the server, closing the
+ * connection with the server and freeing all local memory.
+ * Returns 0 if everything goes well, or -1 in case of an error.
  */
 int rtable_disconnect(struct rtable_t *rtable){
     if(rtable == NULL){
@@ -85,9 +84,10 @@ int rtable_disconnect(struct rtable_t *rtable){
     return 0;
 }
 
-/* Função para adicionar um elemento na tabela.
- * Se a key já existe, vai substituir essa entrada pelos novos dados.
- * Retorna 0 (OK, em adição/substituição), ou -1 (erro).
+/** 
+ * Function to add an element to the table.
+ * If the key already exists, it will replace that entry with the new data.
+ * Returns 0 (OK, for addition/replacement) or -1 (error).
  */
 int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
 
@@ -136,8 +136,9 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
     return 0;
 }
 
-/* Retorna o elemento da tabela com chave key, ou NULL caso não exista
- * ou se ocorrer algum erro.
+/**
+ * Returns the element from the table with the key 'key', or NULL if it doesn't exist
+ * or if an error occurs.
  */
 struct data_t *rtable_get(struct rtable_t *rtable, char *key){
     if(rtable == NULL || key == NULL)
@@ -180,9 +181,10 @@ struct data_t *rtable_get(struct rtable_t *rtable, char *key){
     return data;
 }
 
-/* Função para remover um elemento da tabela. Vai libertar 
- * toda a memoria alocada na respetiva operação rtable_put().
- * Retorna 0 (OK), ou -1 (chave não encontrada ou erro).
+/**
+ * Function to remove an element from the table. It will free
+ * all the memory allocated in the corresponding rtable_put() operation.
+ * Returns 0 (OK) or -1 (key not found or error).
  */
 int rtable_del(struct rtable_t *rtable, char *key){
     if(rtable == NULL || key == NULL)
@@ -213,7 +215,8 @@ int rtable_del(struct rtable_t *rtable, char *key){
     return 0;
 }
 
-/* Retorna o número de elementos contidos na tabela ou -1 em caso de erro.
+/**
+ * Returns the number of elements in the table or -1 in case of error.
  */
 int rtable_size(struct rtable_t *rtable){
     if(rtable == NULL)
@@ -240,9 +243,10 @@ int rtable_size(struct rtable_t *rtable){
     return size;
 }
 
-/* Retorna um array de char* com a cópia de todas as keys da tabela,
- * colocando um último elemento do array a NULL.
- * Retorna NULL em caso de erro.
+/**
+ * Returns an array of char* with copies of all keys from the table,
+ * placing a final NULL element in the array.
+ * Returns NULL in case of an error.
  */
 char **rtable_get_keys(struct rtable_t *rtable){
     if(rtable == NULL)
@@ -281,7 +285,8 @@ char **rtable_get_keys(struct rtable_t *rtable){
     return keys;
 }
 
-/* Liberta a memória alocada por rtable_get_keys().
+/**
+ * Frees the memory allocated by rtable_get_keys().
  */
 void rtable_free_keys(char **keys){
     if(keys == NULL)
@@ -293,8 +298,10 @@ void rtable_free_keys(char **keys){
     return;
 }
 
-/* Retorna um array de entry_t* com todo o conteúdo da tabela, colocando
- * um último elemento do array a NULL. Retorna NULL em caso de erro.
+/** 
+ * Returns an array of entry_t* with the entire contents of the table, placing
+ * a final NULL element in the array.
+ * Returns NULL in case of error.
  */
 struct entry_t **rtable_get_table(struct rtable_t *rtable){
     if(rtable == NULL)
@@ -352,7 +359,8 @@ struct entry_t **rtable_get_table(struct rtable_t *rtable){
     return entries;
 }
 
-/* Liberta a memória alocada por rtable_get_table().
+/**
+ * Frees the memory allocated by rtable_get_table().
  */
 void rtable_free_entries(struct entry_t **entries){
     if(entries == NULL)
@@ -366,6 +374,9 @@ void rtable_free_entries(struct entry_t **entries){
     return;
 }
 
+/**
+ * Returns the table stats, or NULL in case of error.
+ */
 struct stats_t *rtable_stats(struct rtable_t *rtable){
     if(rtable == NULL)
         return NULL;
