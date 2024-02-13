@@ -139,6 +139,10 @@ void client_quit(){
     if(rtable_disconnect(write_rtable) == -1){
         printf("Erro ao desconectar do servidor\n\n");
     }
+    
+    if(zookeeper_close(zh) == -1){
+        printf("Erro ao desconectar o Zookeeper");
+    }
     printf("Bye bye client\n");
     exit(0);
 }
