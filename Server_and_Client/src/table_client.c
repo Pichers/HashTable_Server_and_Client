@@ -20,6 +20,7 @@ struct rtable_t* write_rtable;
 // char *nextCommand;
 static zhandle_t *zh;
 void client_quit();
+struct String_vector* children_list;
 static int is_connected;
 static char *zoo_path = "/chain";
 static char *watcher_ctx = "ZooKeeper Data Watcher";
@@ -28,27 +29,33 @@ typedef struct String_vector zoo_string;
 
 static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx);
 
+int compare_func(const void *a, const void *b) {
+    return strcmp(*(const char **)a, *(const char **)b);
+}
+
+/**
+ * Gets the first and last server of the Zookeeper chain as the read and write servers respectively
+*/
 void get_read_write_servers(){
 
     //Get the zoo nodes with server info
-    //int zoo_get_children(zhandle_t *zh, const char *path, int watch, struct String_vector *children);
-    struct String_vector children = {};
+    zoo_string* children_list =	(zoo_string *) malloc(sizeof(zoo_string));
 
-    int ret = zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, &children);
+    int ret = zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list);
 
-    if(ret == ZOK && children.count > 0){
-        printf("ba\n");
+    qsort(children_list->data, children_list->count, sizeof(char *), compare_func);
+
+    if(ret == ZOK && children_list->count > 0){
         
         char headChildPath[256];
-        snprintf(headChildPath, sizeof(headChildPath), "%s/%s", zoo_path, children.data[0]);
+        snprintf(headChildPath, sizeof(headChildPath), "%s/%s", zoo_path, children_list->data[0]);
 
         char tailChildPath[256];
-        snprintf(tailChildPath, sizeof(tailChildPath), "%s/%s", zoo_path, children.data[children.count - 1]);
+        snprintf(tailChildPath, sizeof(tailChildPath), "%s/%s", zoo_path, children_list->data[children_list->count - 1]);
 
         char headBuffer[128];
         char tailBuffer[128];
         int bufferLen = sizeof(tailBuffer);
-
         
         if(zoo_get(zh, headChildPath, 0, headBuffer, &bufferLen, NULL) == -1){
             printf("error getting head server");
@@ -59,9 +66,9 @@ void get_read_write_servers(){
         }
 
         //disconnect current write table
-        if(write_rtable)
-            if (rtable_disconnect(write_rtable) == -1)
-                printf("error disconnecting write rtable\n");
+        if(write_rtable && rtable_disconnect(write_rtable) == -1){
+            printf("error disconnecting write rtable");
+        }
 
         //Conecta ao servidor de escrita
         write_rtable = rtable_connect(headBuffer);
@@ -71,9 +78,9 @@ void get_read_write_servers(){
         }
 
         //disconnect current read table
-        if(read_rtable)
-            if(rtable_disconnect(read_rtable) == -1)
-                printf("error disconnecting read rtable");
+        if(read_rtable && rtable_disconnect(read_rtable) == -1){
+            printf("error disconnecting read rtable");
+        }
 
         // Conecta ao servidor de leitura
         read_rtable = rtable_connect(tailBuffer);
@@ -81,20 +88,11 @@ void get_read_write_servers(){
             fprintf(stderr, "Falha ao conectar ao servidor cauda\n");
             exit(1);
         }
-
-        //check IP
-        printf("Conectado ao servidor de escrita: %s\n", headBuffer);
-        printf("Conectado ao servidor de leitura: %s\n", tailBuffer);
-
+        
         // Free the memory allocated by zoo_get_children
-        deallocate_String_vector(&children);
+        free(children_list);
     }
-    printf("c\n");
 }
-
-
-
-
 /**
 * Watcher function for connection state change events
 */
@@ -112,24 +110,14 @@ void connection_watcher(zhandle_t *zzh, int type, int state, const char *path, v
 * Data Watcher function for /MyData node
 */
 static void child_watcher(zhandle_t *wzh, int type, int state, const char *zpath, void *watcher_ctx) {
-	zoo_string* children_list =	(zoo_string *) malloc(sizeof(zoo_string));
-	// int zoo_data_len = ZDATALEN;
-	if (state == ZOO_CONNECTED_STATE)	 {
-		if (type == ZOO_CHILD_EVENT) {
-	 	   /* Get the updated children and reset the watch */ 
- 			if (ZOK != zoo_wget_children(zh, zoo_path, child_watcher, watcher_ctx, children_list)) {
- 				fprintf(stderr, "Error setting watch at %s!\n", zoo_path);
- 			} 
-
-            /////////////////
-			get_read_write_servers();
-            /////////////////////
-
-		} 
+	if (state == ZOO_CONNECTED_STATE && type == ZOO_CHILD_EVENT){
+        get_read_write_servers();
 	}
-	free(children_list);
 }
 
+/**
+ * Prints all the available client comands
+ */
 void help() {
         printf("Comandos disponíveis:\n");
         printf("put <key> <data>\n");
@@ -141,8 +129,12 @@ void help() {
         printf("stats\n");
         printf("quit\n");
 }
-
+/**
+ * Closes the client, releasing all used resources
+*/
 void client_quit(){
+    free(children_list);
+
     if(rtable_disconnect(read_rtable) == -1){
         printf("Erro ao desconectar do servidor\n\n");
     }
@@ -150,11 +142,22 @@ void client_quit(){
     if(rtable_disconnect(write_rtable) == -1){
         printf("Erro ao desconectar do servidor\n\n");
     }
+    
+    if(zookeeper_close(zh) == -1){
+        printf("Erro ao desconectar o Zookeeper");
+    }
     printf("Bye bye client\n");
     exit(0);
 }
 
-
+/**
+ * Whole client:
+ * - Receives a client's input from the console
+ * - Processes the input and sends a message to the server
+ * applying the operations in the table server,
+ * or receiving the read values.
+ * - Shows the needed information on the console.
+ */
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         fprintf(stderr, "Uso: %s <server_address:port>\n", argv[0]);
@@ -171,9 +174,7 @@ int main(int argc, char *argv[]) {
     }
     sleep(3);
     //função para ir buscar head e tail, e registar as rtables
-    printf("Getting servers\n");
     get_read_write_servers();
-    printf("Got servers\n");
 
     char input[256];
     char *token;
@@ -182,7 +183,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    zoo_string* children_list = (zoo_string *) malloc(sizeof(zoo_string));
+    children_list = (zoo_string *) malloc(sizeof(zoo_string));
     while (1) {
         ///////////////////////////////////////////
         //----------TAKEN FROM EXAMPLE-----------//
@@ -236,7 +237,7 @@ int main(int argc, char *argv[]) {
                 if(a == -1)
                     printf("Erro ao inserir elemento\n\n");
                 
-                printf("Inserindo elemento: %s\n\n", entry->key);
+                printf("Inserido elemento: %s\n\n", entry->key);
 
                 entry_destroy(entry);
             }
@@ -271,10 +272,10 @@ int main(int argc, char *argv[]) {
                 
                 int a = rtable_del(write_rtable, key);
                 if(a == -1){
-                    printf("Elemento nao encontrado, ou erro ao apaga-lo\n\n");
+                    printf("Elemento não encontrado, ou erro ao apagá-lo\n\n");
                 }
                 else{
-                    printf("Elemento com a chave %s apagado\n\n", key);
+                    printf("Elemento com a chave %s apagádo\n\n", key);
                 }
             }
         } else if (strcmp(token, "size") == 0) {

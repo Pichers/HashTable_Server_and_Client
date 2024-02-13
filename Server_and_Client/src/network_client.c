@@ -11,7 +11,10 @@
 #include "client_stub-private.h"
 #include "sdmessage.pb-c.h"
 
-// Function to read a specific number of bytes from the socket
+
+/**
+ * Function to read size bytes from the socket to the buffer.
+*/
 int read_all(int sockfd, void *buffer, size_t size) {
     size_t bytes_read = 0;
     ssize_t result;
@@ -33,7 +36,10 @@ int read_all(int sockfd, void *buffer, size_t size) {
     return 0;
 }
 
-// Function to write a specific number of bytes to the socket
+
+/**
+ * Function to write a specific number of bytes to the socket
+*/
 int write_all(int sockfd, const void *buffer, size_t size) {
     size_t bytes_written = 0;
     ssize_t result;
@@ -51,16 +57,17 @@ int write_all(int sockfd, const void *buffer, size_t size) {
     return 0;
 }
 
-/* Esta função deve:
- * - Obter o endereço do servidor (struct sockaddr_in) com base na
- *   informação guardada na estrutura rtable;
- * - Estabelecer a ligação com o servidor;
- * - Guardar toda a informação necessária (e.g., descritor do socket)
- *   na estrutura rtable;
- * - Retornar 0 (OK) ou -1 (erro).
+/** 
+ * This function should:
+ * - Obtain the server's address (struct sockaddr_in) based on the
+ *   information stored in the rtable structure;
+ * - Establish the connection with the server;
+ * - Save all the necessary information (e.g., socket descriptor)
+ *   in the rtable structure;
+ * - Return 0 (OK) or -1 (error).
  */
 int network_connect(struct rtable_t *rtable) {
-    // Criar um socket
+    
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
         perror("Erro ao criar o socket");
@@ -96,14 +103,15 @@ int network_connect(struct rtable_t *rtable) {
     return 0;
 }
 
-/* Esta função deve:
- * - Obter o descritor da ligação (socket) da estrutura rtable_t;
- * - Serializar a mensagem contida em msg;
- * - Enviar a mensagem serializada para o servidor;
- * - Esperar a resposta do servidor;
- * - De-serializar a mensagem de resposta;
- * - Tratar de forma apropriada erros de comunicação;
- * - Retornar a mensagem de-serializada ou NULL em caso de erro.
+/** 
+ * This function should:
+ * - Obtain the connection descriptor (socket) from the rtable_t structure;
+ * - Serialize the message contained in 'msg';
+ * - Send the serialized message to the server;
+ * - Wait for the server's response;
+ * - Deserialize the response message;
+ * - Handle communication errors appropriately;
+ * - Return the deserialized message or NULL in case of an error.
  */
 MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
     if (rtable == NULL || msg == NULL)
@@ -175,8 +183,9 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
     return response;
 }
 
-/* Fecha a ligação estabelecida por network_connect().
- * Retorna 0 (OK) ou -1 (erro).
+/**
+ * Closes the connection established in network_connect().
+ * Returns 0 (OK) or -1 (error).
  */
 int network_close(struct rtable_t *rtable) {
     if (rtable == NULL || rtable->sockfd == -1) {

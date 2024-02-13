@@ -10,9 +10,16 @@
 int skt;
 struct table_t* table;
 
+/**
+ * Shuts down the server, releasing all used resources.
+ * Return -1 in case of error, and 0 (OK) otherwise.
+*/
 void server_shutdown(){
-    network_server_close(skt);
-    table_skel_destroy(table);
+
+    if(network_server_close(skt) == -1)
+        exit(1);
+    if(table_skel_destroy(table) == -1)
+        exit(1);
     exit(0);
 }
 
@@ -34,14 +41,14 @@ int main(int argc, char const *argv[]){
     int port = atoi(porta);
     int n_lists = atoi(argv[2]);
 
-    //iniciar a tabela com n_lists listas
+    //initializethe table with n_lists lists
     table = table_skel_init(n_lists);
     if(table == NULL) {
         printf("Error creating table");
         exit(1);
     }
 
-    //inicializar/associar ao socket
+    //initialize the socket
     skt = network_server_init(port, (char *) argv[3]);
     if(skt == -1){
         printf("Error binding to port");
@@ -61,32 +68,14 @@ int main(int argc, char const *argv[]){
     struct stats_t stats = stats_t_init();
     struct stats_t *stats_ptr = &stats;
 
-    //chamar o main_loop
-    int loopI = network_main_loop(skt, table, stats_ptr);
-    if(loopI == -1){
+    //Call the main_loop
+    if(network_main_loop(skt, table, stats_ptr) == -1){
         table_skel_destroy(table);
         printf("Error in main loop");
         exit(1);
     }
 
-    int closeI = network_server_close(skt);
-    if(closeI == -1){
-        table_skel_destroy(table);
-        printf("Error closing socket");
-        exit(1);
-    }
-
-    int tableDestroyI = table_skel_destroy(table);
-    if(tableDestroyI == -1){
-        printf("Error destroying table");
-        exit(1);
-    }
+    server_shutdown();
 
     return 0;
 }
-
-struct table_t* get_table(){
-    return table;
-}
-
-
