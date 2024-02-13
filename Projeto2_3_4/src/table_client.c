@@ -20,6 +20,7 @@ struct rtable_t* write_rtable;
 // char *nextCommand;
 static zhandle_t *zh;
 void client_quit();
+struct String_vector* children_list;
 static int is_connected;
 static char *zoo_path = "/chain";
 static char *watcher_ctx = "ZooKeeper Data Watcher";
@@ -132,6 +133,8 @@ void help() {
  * Closes the client, releasing all used resources
 */
 void client_quit(){
+    free(children_list);
+
     if(rtable_disconnect(read_rtable) == -1){
         printf("Erro ao desconectar do servidor\n\n");
     }
@@ -180,7 +183,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    zoo_string* children_list = (zoo_string *) malloc(sizeof(zoo_string));
+    children_list = (zoo_string *) malloc(sizeof(zoo_string));
     while (1) {
         ///////////////////////////////////////////
         //----------TAKEN FROM EXAMPLE-----------//
