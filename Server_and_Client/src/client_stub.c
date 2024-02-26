@@ -103,7 +103,7 @@ int rtable_put(struct rtable_t *rtable, struct entry_t *entry){
 
     e.key = entry->key;
 
-    // size_t entryPackedLen = entry_t__get_packed_size(&e);
+    //TODO nao precisa malloc nem packed data
     uint8_t *packedData = malloc(entry->value->datasize);
     
     if(packedData == NULL){

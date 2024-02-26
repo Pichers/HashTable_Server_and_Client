@@ -14,8 +14,6 @@ struct rtable_t* write_rtable;
 
 #define ZDATALEN 1024 * 1024
 
-// struct rtable_t *rtable = NULL;
-
 
 // char *nextCommand;
 static zhandle_t *zh;

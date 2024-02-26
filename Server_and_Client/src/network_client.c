@@ -11,7 +11,6 @@
 #include "client_stub-private.h"
 #include "sdmessage.pb-c.h"
 
-
 /**
  * Function to read size bytes from the socket to the buffer.
 */
@@ -26,8 +25,8 @@ int read_all(int sockfd, void *buffer, size_t size) {
             perror("Error reading from socket");
             return -1;
         } else if (result == 0) {
-            perror("Socket closed prematurely");
-            return -1;
+            printf("Socket closed prematurely");
+            return 0;
         }
 
         bytes_read += result;
@@ -49,6 +48,9 @@ int write_all(int sockfd, const void *buffer, size_t size) {
         if (result == -1) {
             perror("Error writing to socket");
             return -1;
+        } else if (result == 0) {
+            printf("Socket closed prematurely");
+            return 0;
         }
 
         bytes_written += result;
@@ -137,8 +139,13 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
     }
     message_t__pack(msg, bufW);
 
-    if (write_all(sockfd, bufW, msg_size) < 0) {
-        perror("Error sending message");
+    int a = write_all(sockfd, bufW, msg_size);
+
+    if (a <= 0) {
+        if(a == 0)
+            printf("Socket closed permanently");
+        else
+            printf("Error sending message");
         free(bufW);
         return NULL;
     }
@@ -148,7 +155,7 @@ MessageT *network_send_receive(struct rtable_t *rtable, MessageT *msg) {
     // Receive short
     short response_size_short;
 
-    if (read_all(sockfd, &response_size_short, sizeof(short)) < 0) {
+    if(read_all(sockfd, &response_size_short, sizeof(short)) < 0) {
         return NULL;
     }
 
